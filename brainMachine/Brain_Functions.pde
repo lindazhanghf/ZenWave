@@ -10,7 +10,7 @@ void resetNeurons() {
     resetDone = true;
   }
 
-  if(resetDone == true && !is_human_brain(currentState) && rectY > 120) {
+  if(resetDone == true && !is_human_brain() && rectY > 120) {
     println("Go into human BRAIN");
 
     currentState += 1;
@@ -78,7 +78,7 @@ void resetNeurons() {
 // A.I BRAIN
 
 
-  if(resetDone == true && is_human_brain(currentState) && rectY < 100) { // Go into A.I BRAIN
+  if(resetDone == true && is_human_brain() && rectY < 100) { // Go into A.I BRAIN
     println("Go into A.I BRAIN");
 
     currentState += 1;
