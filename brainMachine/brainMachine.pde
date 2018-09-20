@@ -143,7 +143,6 @@ void draw() {
   // float appX = normalizedPoint.getX() * appWidth; // Increased palm position X
   // float appY = (1 - normalizedPoint.getY()) * appHeight; // Increased palm position Y
   // float appZ = (1 - normalizedPoint.getZ()); // Increased palm position Z
-
   // rectX = appX;
   // rectY = appY;
   // rectZ = appZ;
@@ -297,16 +296,8 @@ class  Neuron {
             stroke(0 + xColor, 255 - xColor, 0 + (xColor * 3), 45);
           }
 
-
-
       } else {
-
-        if(isHumanBrain(currentState)){
-          stroke(77, 142, 159, 45);
-        } else if(!isHumanBrain(currentState)){
-          stroke(0, 51, 153, 45);
-        }
-
+        fill_in_synapse_default();
       }
 
     } else if(x > 250 && x <= 500 && y < 420) { // BRAIN SECTION 2
@@ -320,13 +311,7 @@ class  Neuron {
         }
 
       } else {
-
-        if(isHumanBrain(currentState)){
-          stroke(77, 142, 159, 45);
-        } else if(!isHumanBrain(currentState)){
-          stroke(0, 51, 153, 45);
-        }
-
+        fill_in_synapse_default();
       }
 
     } else if(x > 10 && x <= 260 && y < 322) { // BRAIN SECTION 2
@@ -341,13 +326,7 @@ class  Neuron {
         }
 
       } else {
-
-         if(isHumanBrain(currentState)){
-            stroke(77, 142, 159, 45);
-          } else if(!isHumanBrain(currentState)){
-            stroke(0, 51, 153, 45);
-          }
-
+        fill_in_synapse_default();
       }
 
     } else if(x > 10 && x < 260 && y > 270 && y < 570) { // BRAIN SECTION 1
@@ -360,13 +339,7 @@ class  Neuron {
         }
 
       } else {
-
-        if(isHumanBrain(currentState)){
-          stroke(77, 142, 159, 45);
-        } else if(!isHumanBrain(currentState)){
-          stroke(0, 51, 153, 45);
-        }
-
+        fill_in_synapse_default();
       }
 
     } else if(x > 240 && x < 330 && y < 560) { // BRAIN SECTION 1
@@ -378,15 +351,8 @@ class  Neuron {
           stroke(0 + xColor, 255 - xColor, 0 + (xColor * 3), 45);
         }
 
-
       } else {
-
-        if(isHumanBrain(currentState)){
-          stroke(77, 142, 159, 45);
-        } else if(!isHumanBrain(currentState)){
-          stroke(0, 51, 153, 45);
-        }
-
+        fill_in_synapse_default();
       }
 
     } else if(x > 90 && x < 500 && y > 560) { // BRAIN SECTION 0
@@ -401,13 +367,7 @@ class  Neuron {
         }
 
       } else {
-
-        if(isHumanBrain(currentState)){
-          stroke(77, 142, 159, 45);
-        } else if(!isHumanBrain(currentState)){
-          stroke(0, 51, 153, 45);
-        }
-
+        fill_in_synapse_default();
       }
 
     } else {
@@ -421,13 +381,7 @@ class  Neuron {
         }
 
       } else {
-
-        if(isHumanBrain(currentState)){
-          stroke(77, 142, 159, 45);
-        } else if(!isHumanBrain(currentState)){
-          stroke(0, 51, 153, 45);
-        }
-
+        fill_in_synapse_default();
       }
 
     }
@@ -451,6 +405,15 @@ class  Neuron {
 //    y+=(noise(id*5+frameCount/10.0)-0.5);
     x+=(random(-0.4,0.4));
     y+=(random(-0.4,0.4));
+  }
+
+  // Helper function
+  void fill_in_synapse_default() {
+    if(isHumanBrain(currentState)){
+      stroke(77, 142, 159, 45);
+    } else if(!isHumanBrain(currentState)){
+      stroke(0, 51, 153, 45);
+    }
   }
 
 }

@@ -39,6 +39,7 @@ int BCI = 5;          // Final state after "flipped"
 int[] hsi_precision = new int[4];
 double[] relative = new double[5];
 double[] absolute = new double[5];
+double[] score = new double[5];
 
 // Audio File
 SoundFile success;
@@ -103,11 +104,15 @@ void oscEvent(OscMessage msg) {
 
     getHeadbandStatus(msg);
 
+
     switch (state)
     {
+        case 1:
+        case 2:
+        case 3:
         case 4:
-            getAbsolute(msg);
-
+            getScore(msg);
+            // getAbsolute(msg);
             break;
 
         default :
@@ -130,7 +135,7 @@ void visualizeAbsolute() {
     }
 }
 
-void detect_calmness(OscMessage msg) {
+void detect_calmness() {
     if (absolute[ALPHA] > absolute[BETA])
     {
         int curr_time = current_time();
@@ -197,12 +202,17 @@ void getAbsolute(OscMessage msg) {
     boolean has_NaN = get_elements_data(msg, "absolute", absolute);
 
     if (!has_NaN && state == DETECTION)
-        detect_calmness(msg);
+        detect_calmness();
 }
 
 /* Relative Band Power */
 void getRelative(OscMessage msg) {
     get_elements_data(msg, "relative", relative);
+}
+
+/* Band Power Score */
+void getScore(OscMessage msg) {
+    get_elements_data(msg, "session_score", score);
 }
 
 boolean get_elements_data(OscMessage msg, String element_name, double[] data_array) {
