@@ -5,7 +5,7 @@
 // OSC Library
 import oscP5.*;
 
-boolean debug = false;
+boolean debug = true;
 
 //OSC
 String muse_name = "muse"; // Muse's default setting
@@ -37,9 +37,9 @@ int BCI = 5;          // Final state after "flipped"
 
 // Data
 int[] hsi_precision = new int[4];
-double[] relative = new double[5];
-double[] absolute = new double[5];
-double[] score = new double[5];
+float[] relative = new float[5];
+float[] absolute = new float[5];
+float[] score = new float[5];
 
 // Audio File
 SoundFile success;
@@ -55,7 +55,7 @@ int state = IDLE;
 int detection_start_time = -1;
 
 // for testing
-double beta_upper_limit = 0.3;
+float beta_upper_limit = 0.3;
 int time_since_detecting = -1;
 
 void draw_Muse_Reader() {
@@ -111,8 +111,8 @@ void oscEvent(OscMessage msg) {
         case 2:
         case 3:
         case 4:
+            getAbsolute(msg);
             getScore(msg);
-            // getAbsolute(msg);
             break;
 
         default :
@@ -212,16 +212,24 @@ void getRelative(OscMessage msg) {
 
 /* Band Power Score */
 void getScore(OscMessage msg) {
-    get_elements_data(msg, "session_score", score);
+    boolean has_NaN = get_elements_data(msg, "session_score", absolute); // TODO: score
+    if (has_NaN)
+        return;
+
+    for (int i = 0; i < NUM_BAND; i++)
+    {
+        colors[i] = (abs(((1 - absolute[i]) * 50) + 12)) * 2; // From Pedro's xColor formula
+        println(BANDS[i], " color: ", colors[i]);
+    }
 }
 
-boolean get_elements_data(OscMessage msg, String element_name, double[] data_array) {
+boolean get_elements_data(OscMessage msg, String element_name, float[] data_array) {
     boolean has_NaN = false;
-    // double[] result_data = new double[5];
+    // float[] result_data = new float[5];
 
     for (int i = 0; i < 5; i++) {
         if (msg.checkAddrPattern(muse_name + "/elements/" + BANDS[i] + "_" + element_name)) {
-            double sum = 0;
+            float sum = 0;
                 for (int j = 0; j < NUM_CHANNEL; j++) {
                     sum += get_OSC_value(msg, j);
                 }
@@ -244,26 +252,25 @@ void getBlink(OscMessage msg) {
     if (msg.checkAddrPattern(muse_name + "/elements/blink")==true) {
         print("\nBlink ");
         if (msg.checkTypetag("i")) {
-                print(msg.get(0).intValue());
+            print(msg.get(0).intValue());
         } else
             print("Type unknown");
     }
 }
 
-/* Helper Methods */
 int current_time() {
     return (hour() * 60 + minute()) * 60 + second();
 }
 
-// get double value from "ffff" or "dddd" type OSC data
-double get_OSC_value(OscMessage msg, int index) {
+// get float value from "ffff" or "dddd" type OSC data
+float get_OSC_value(OscMessage msg, int index) {
     if (msg.checkTypetag("ffff"))
-        return (double)msg.get(index).floatValue();
+        return msg.get(index).floatValue();
     if (msg.checkTypetag("dddd"))
-        return msg.get(index).doubleValue();
+        return (float)msg.get(index).doubleValue();
 
     debugPrint("Type unknown" + "\n");
-    return Double.NaN;
+    return Float.NaN;
 }
 
 /* Debug helper */
