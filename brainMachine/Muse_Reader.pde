@@ -27,6 +27,7 @@ int DELTA = 3;
 int THETA = 4;
 
 // States
+String[] state_names = {"IDLE", "FITTING", "CALIBRATION", "PREPARATION", "DETECTION", "BCI"};
 int IDLE = 0;         // Headband not on
 int FITTING = 1;      // Adjusting the headband until fitted
 int CALIBRATION = 2;  // 15 seconds of calibration
@@ -65,15 +66,12 @@ void draw_Muse_Reader() {
     }
 
     // testing
+    text(state_names[state], 5, 15);
     switch (state) {
-        case 0: text("IDLE", 5, 15); break;
-        case 1: text("FITTING", 5, 15); break;
-        case 2: text("CALIBRATION", 5, 15); break;
-        case 3: text("PREPARATION", 5, 15); break;
-        case 4: text("DETECTION", 5, 15);
+        case 4:
             if (time_since_detecting>0) println(time_since_detecting);
             break;
-        default : text("BCI", 5, 15); break;
+        default: break;
     }
 
     visualizeAbsolute();
@@ -90,15 +88,7 @@ void changeState(int new_state) {
         rectY = 50;
     }
 
-    print("Change to new state:");
-    switch (new_state) {
-        case 0: println("IDLE"); break;
-        case 1: println("FITTING"); break;
-        case 2: println("CALIBRATION"); break;
-        case 3: println("PREPARATION"); break;
-        case 4: println("DETECTION"); break;
-        default : println("BCI"); break;
-    }
+    println("Change to new state: ", state_names[new_state]);
 
     state = new_state;
 }
