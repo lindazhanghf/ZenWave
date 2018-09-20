@@ -299,7 +299,6 @@ class  Neuron {
     int c = 24;
       if (is_human_brain())
         stroke(242, 242 - (c / 2), 13 + c, 45); // Alpha=score[brain_section#] Original:Alpha=45
-        // stroke(0 + (300 * 2), 255 + (300 * 2), 180 - (300 * 2), 20); // Super vibrant colors
 
     }
 
@@ -311,7 +310,6 @@ class  Neuron {
       int c = 24;
       if (is_human_brain())
         stroke(0 + (c * 2), 255 + (c * 2), 180 - (c * 2), 45); // Alpha=score[brain_section#] Original:Alpha=20
-        // stroke(255, 128 - (1000 / 2),0,30); // Super vibrant colors
 
     }
 
@@ -323,7 +321,6 @@ class  Neuron {
       int c = 125;
       if (is_human_brain())
         stroke(255 , 159 - (c / 3), 102 - c, 45); // Alpha=score[brain_section#] Original:Alpha=20
-        // stroke(255 , 159 - (1000 / 3), 102 - 1000, 20); // Super vibrant colors
 
     }
 
@@ -334,7 +331,6 @@ class  Neuron {
     int c = 125;
       if (is_human_brain())
         stroke(255,51,51 + (c * 1.5),45); // Alpha=score[brain_section#] Original:Alpha=30
-        // stroke(255,51,51 + (1000 * 1.5),30); // Super vibrant colors
 
     }
 
@@ -344,104 +340,8 @@ class  Neuron {
       int c = 125;
       if (is_human_brain())
         stroke(255, 128 - (c / 2),0,45); // Alpha=score[brain_section#] Original:Alpha=30
-        // stroke(242, 242 - (0 / 2), 13 + 0, 45); // Super vibrant colors
 
     }
-
-//     if(x > 635 || x > 500 && y < 405 ) { // BRAIN SECTION 3
-//       if(fingers == 0 && strength > 0.5 || fingers == 5) {
-// //        stroke(lerpColor(#ff9966,#ff9933,norm(val,0,255)),20); // Color of the neural networks
-
-//           if(is_human_brain()) {
-//             stroke(242, 242 - (xColor / 2), 13 + xColor, 45);
-//           } else {
-//             fill_in_synapse_AI();
-//           }
-
-//       } // else {
-//       //   fill_in_synapse_default();
-//       // }
-
-//     } else if(x > 250 && x <= 500 && y < 420) { // BRAIN SECTION 2
-//       if(fingers == 1 || fingers == 5) {
-//        if(is_human_brain()){
-// //          stroke(255 - (xColor * 1.2), 255, 128 - (xColor/ 1.5), 20);
-//           stroke(0 + (xColor * 2), 255 + (xColor * 2), 180 - (xColor * 2), 20);
-//         } else {
-//           fill_in_synapse_AI();
-//         }
-
-//       } // else {
-//       //   fill_in_synapse_default();
-//       // }
-
-//     } else if(x > 10 && x <= 260 && y < 322) { // BRAIN SECTION 2
-//       if(fingers == 1 || fingers == 5) {
-
-//         if(is_human_brain()){
-//           stroke(0 + (xColor * 2), 255 + (xColor * 2), 120 - (xColor/ 1.5), 20);
-// //          stroke(255 - (xColor * 1.2), 255, 128 - (xColor/ 1.5), 20);
-//         } else {
-//           fill_in_synapse_AI();
-//         }
-
-//       } // else {
-//       //   fill_in_synapse_default();
-//       // }
-
-//     } else if(x > 10 && x < 260 && y > 270 && y < 570) { // BRAIN SECTION 1
-//       if(fingers == 2 || fingers == 5) {
-//         if(is_human_brain()){
-//           stroke(255 , 159 - (xColor / 3), 102 - xColor, 20);
-//         } else {
-//           fill_in_synapse_AI();
-//         }
-
-//       } // else {
-//       //   fill_in_synapse_default();
-//       // }
-
-//     } else if(x > 240 && x < 330 && y < 560) { // BRAIN SECTION 1
-//       if(fingers == 2 || fingers == 5) {
-//         if(is_human_brain()){
-//           stroke(255 , 159 - (xColor / 3), 102 - xColor, 20);
-//         } else {
-//           fill_in_synapse_AI();
-//         }
-
-//       } // else {
-//       //   fill_in_synapse_default();
-//       // }
-
-//     } else if(x > 90 && x < 500 && y > 560) { // BRAIN SECTION 0
-//       if(fingers == 3 || fingers == 5) {
-// //        stroke(lerpColor(#0066ff,#0000ff,norm(val,0,255)),20);
-
-//         if(is_human_brain()){
-//           stroke(255,51,51 + (xColor * 1.5),30);
-//         } else {
-//           fill_in_synapse_AI();
-//         }
-
-//       } // else {
-//       //   fill_in_synapse_default();
-//       // }
-
-//     } else {
-//       if(fingers == 4 || fingers == 5) {  // BRAIN SECTION 4
-// //        stroke(lerpColor(#cc33ff,#9933ff,norm(val,0,255)),20);
-//         if(is_human_brain()){
-//           stroke(255, 128 - (xColor / 2),0,30);
-//         } else {
-//           fill_in_synapse_AI();
-//         }
-
-//       } // else {
-//       //   fill_in_synapse_default();
-//       // }
-
-//     }
-
 
     for(int i = 0;i<s.length;i+=1) {
       line(n[s[i].B].xx,n[s[i].B].yy,xx,yy);
