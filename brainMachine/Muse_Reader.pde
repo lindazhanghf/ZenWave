@@ -5,7 +5,7 @@
 // OSC Library
 import oscP5.*;
 
-boolean debug = true;
+boolean debug = false;
 
 //OSC
 String muse_name = "muse"; // Muse's default setting
@@ -52,11 +52,11 @@ int rect_width = 50;
 
 // State Machine
 int state = IDLE;
-int detection_start_time = -1;
+int calm_start_time = -1;
 
 // for testing
 float beta_upper_limit = 0.3;
-int time_since_detecting = -1;
+int time_since_detected = -1;
 
 void draw_Muse_Reader() {
     // background(255,255,255);
@@ -70,7 +70,7 @@ void draw_Muse_Reader() {
     text(state_names[state], 5, 15);
     switch (state) {
         case 4:
-            if (time_since_detecting>0) println(time_since_detecting);
+            if (time_since_detected>0) println(time_since_detected);
             break;
         default: break;
     }
@@ -140,26 +140,26 @@ void detect_calmness() {
     {
         int curr_time = current_time();
 
-        if (detection_start_time < 0)
-            detection_start_time = curr_time; // Reset start_time
+        if (calm_start_time < 0)
+            calm_start_time = curr_time; // Reset start_time
 
-        else if (curr_time - detection_start_time > 1) { // 'Calm' for 10 seconds
+        else if (curr_time - calm_start_time > 10) { // 'Calm' for 10 seconds
             changeState(BCI);
             success.play();
         }
 
         //test
         else {
-            time_since_detecting = curr_time - detection_start_time;
+            time_since_detected = curr_time - calm_start_time;
             // println(minute(), ":", second());
         }
     }
     else {
-        detection_start_time = -1;
+        calm_start_time = -1;
     }
 
     if (absolute[BETA] > beta_upper_limit) {
-        detection_start_time = -1;
+        calm_start_time = -1;
     }
 }
 
@@ -186,7 +186,7 @@ void getHeadbandStatus(OscMessage msg) {
             hsi_precision[i] = (int)get_OSC_value(msg, i);
             sum_precision += hsi_precision[i];
             if (hsi_precision[i] > 2)
-                detection_start_time = -1;
+                calm_start_time = -1;
         }
 
         if (state ==  FITTING && sum_precision == 4)

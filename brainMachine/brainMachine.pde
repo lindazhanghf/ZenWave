@@ -24,8 +24,8 @@ float strength; // Grabbing strength
 float rectX;
 float rectY;
 float rectZ;
-float xColor;
-float yIntensity;
+// float xColor;
+// float yIntensity;
 float[] colors = new float[5];
 
 // Gesture triggers
@@ -127,7 +127,7 @@ void setup() {
   rectZ = 0;
 
   fingers = 5;
-  xColor = (abs((rectX / 20) + 12)) * 2;
+  // xColor = (abs((rectX / 20) + 12)) * 2;
 
 }
 
@@ -138,7 +138,6 @@ void draw() {
   // TODO Testing
   rectX = mouseX;
   rectY = mouseY;
-  // println(mouseX);
 
   // Background
   if(is_human_brain()) {
@@ -147,13 +146,6 @@ void draw() {
     background(255, 11);
   }
 
-  // float appX = normalizedPoint.getX() * appWidth; // Increased palm position X
-  // float appY = (1 - normalizedPoint.getY()) * appHeight; // Increased palm position Y
-  // float appZ = (1 - normalizedPoint.getZ()); // Increased palm position Z
-  // rectX = appX;
-  // rectY = appY;
-  // rectZ = appZ;
-
   // Music Rate
   if(abs((rectY / 1080) - 1.50) > 1.51) {
     adjustAi = 0.2;
@@ -161,12 +153,15 @@ void draw() {
     adjustAi = 0;
   }
 
+  // artBrainLoop.rate(abs((rectY / 1080) - 1.50) + adjustAi);
+  // humBrainLoop.rate(abs((rectY / 1080) - 1.50));
   artBrainLoop.rate(abs((rectY / 1080) - 1.50) + adjustAi);
-  humBrainLoop.rate(abs((rectY / 1080) - 1.50));
+  humBrainLoop.rate(abs((1-absolute[BETA]) - 1.50));
+
 
   // Color Changer
-  xColor = (abs((rectX / 20) + 12)) * 2;
-  yIntensity = abs((((rectY + 20) / 3) - 425) / 2);
+  // xColor = (abs((rectX / 20) + 12)) * 2;
+  // yIntensity = abs((((rectY + 20) / 3) - 425) / 2);
 
   pushMatrix();
 
@@ -300,7 +295,6 @@ class  Neuron {
       int band = ALPHA;
       if (is_human_brain())
         stroke(0 + (c * 2), 255 + (c * 2), 180 - (c * 2), score[band] * 100); // Alpha=score[brain_section#] Original:Alpha=20
-        // stroke(255 * score[band] * 2, 255 * score[band] * 2, 37 * score[band] * 2, 45);
 
     }
 
@@ -312,7 +306,6 @@ class  Neuron {
       int band = BETA;
       int c = 24;
       if (is_human_brain())
-        // stroke(48 * score[band] * 2, 255 * score[band] * 2, 140 * score[band] * 2, 45);
         stroke(242, 242 - (c / 2), 13 + c, score[band] * 100); // Alpha=score[brain_section#] Original:Alpha=45
 
     }
@@ -325,7 +318,6 @@ class  Neuron {
       int band = GAMMA;
       int c = 125;
       if (is_human_brain())
-        // stroke(255 * score[band] * 2, 165 * score[band] * 2, 100 * score[band] * 2, 45);
         stroke(255 , 159 - (c / 3), 102 - c, score[band] * 100); // Alpha=score[brain_section#] Original:Alpha=20
 
     }
@@ -337,7 +329,6 @@ class  Neuron {
       int band = DELTA;
       int c = 125;
       if (is_human_brain())
-        // stroke(255 * score[band] * 2, 60 * score[band] * 2, 80 * score[band] * 2, 45);
         stroke(255,51,51 + (c * 1.5),score[band] * 100); // Alpha=score[brain_section#] Original:Alpha=30
 
     }
@@ -348,7 +339,6 @@ class  Neuron {
       int band = THETA;
       int c = 125;
       if (is_human_brain())
-        // stroke(255 * score[band] * 2, 120 * score[band] * 2, 0, 45);
         stroke(255, 128 - (c / 2),0,score[band] * 100); // Alpha=score[brain_section#] Original:Alpha=30
 
     }
@@ -385,10 +375,8 @@ class  Neuron {
   }
 
   void fill_in_synapse_AI() {
-    stroke(0 + xColor, 255 - xColor, 0 + (xColor * 3), 45);
-    // stroke(0 + colors[index], 255 - colors[index], 0 + (colors[index] * 3), 45);
-    // int col = (int)(abs((score[ALPHA] * 50) + 12)) * 2;
-    // stroke(0 + col, 255ama amahth - col, 0 + (col * 3), 45);
+    int col = (int)(abs((score[ALPHA] * 50) + 12)) * 2;
+    stroke(0 + col, 255 - col, 0 + (col * 3), 45);
   }
 
 }
