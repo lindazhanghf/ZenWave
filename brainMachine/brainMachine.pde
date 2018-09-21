@@ -69,7 +69,7 @@ void setup() {
 
 // Audio Loop
   artBrainLoop = new SoundFile (this, "artBrain.mp3");
-  humBrainLoop = new SoundFile (this, "humBrainPlay.mp3");
+  humBrainLoop = new SoundFile (this, "jazzLoop.wav");
   humBrainLoop.loop(1);
 
   // Setup Muse Reader
@@ -136,8 +136,8 @@ void setup() {
 
 void draw() {
   // TODO Testing
-  rectX = mouseX;
-  rectY = mouseY;
+  // rectX = mouseX;
+  // rectY = mouseY;
 
   // Background
   if(is_human_brain()) {
@@ -156,7 +156,9 @@ void draw() {
   // artBrainLoop.rate(abs((rectY / 1080) - 1.50) + adjustAi);
   // humBrainLoop.rate(abs((rectY / 1080) - 1.50));
   artBrainLoop.rate(abs((rectY / 1080) - 1.50) + adjustAi);
-  humBrainLoop.rate(abs((1-absolute[BETA]) - 1.50));
+  // humBrainLoop.rate(abs((1-absolute[BETA]) - 1.30));
+
+  humBrainLoop.rate(abs(1-absolute[BETA] - 1.7));
 
 
   // Color Changer
@@ -294,7 +296,7 @@ class  Neuron {
       int c = 24;
       int band = ALPHA;
       if (is_human_brain())
-        stroke(0 + (c * 2), 255 + (c * 2), 180 - (c * 2), score[band] * 100); // Alpha=score[brain_section#] Original:Alpha=20
+        stroke(0 + (c * 2), 255 + (c * 2), 180 - (c * 2), score[band] * 80 + 20); // Alpha=score[brain_section#] Original:Alpha=20
 
     }
 
@@ -306,7 +308,7 @@ class  Neuron {
       int band = BETA;
       int c = 24;
       if (is_human_brain())
-        stroke(242, 242 - (c / 2), 13 + c, score[band] * 100); // Alpha=score[brain_section#] Original:Alpha=45
+        stroke(242, 242 - (c / 2), 13 + c, score[band] * 80 + 20); // Alpha=score[brain_section#] Original:Alpha=45
 
     }
 
@@ -318,7 +320,7 @@ class  Neuron {
       int band = GAMMA;
       int c = 125;
       if (is_human_brain())
-        stroke(255 , 159 - (c / 3), 102 - c, score[band] * 100); // Alpha=score[brain_section#] Original:Alpha=20
+        stroke(255 , 159 - (c / 3), 102 - c, score[band] * 80 + 20); // Alpha=score[brain_section#] Original:Alpha=20
 
     }
 
@@ -329,7 +331,7 @@ class  Neuron {
       int band = DELTA;
       int c = 125;
       if (is_human_brain())
-        stroke(255,51,51 + (c * 1.5),score[band] * 100); // Alpha=score[brain_section#] Original:Alpha=30
+        stroke(255,51,51 + (c * 1.5),score[band] * 80 + 20); // Alpha=score[brain_section#] Original:Alpha=30
 
     }
 
@@ -339,7 +341,7 @@ class  Neuron {
       int band = THETA;
       int c = 125;
       if (is_human_brain())
-        stroke(255, 128 - (c / 2),0,score[band] * 100); // Alpha=score[brain_section#] Original:Alpha=30
+        stroke(255, 128 - (c / 2),0,score[band] * 80 + 20); // Alpha=score[brain_section#] Original:Alpha=30
 
     }
 

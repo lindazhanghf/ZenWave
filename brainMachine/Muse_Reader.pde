@@ -143,7 +143,7 @@ void detect_calmness() {
         if (calm_start_time < 0)
             calm_start_time = curr_time; // Reset start_time
 
-        else if (curr_time - calm_start_time > 10) { // 'Calm' for 10 seconds
+        else if (curr_time - calm_start_time > 5) { // 'Calm' for 10 seconds TODO
             changeState(BCI);
             success.play();
         }
