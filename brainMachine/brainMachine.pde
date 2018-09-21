@@ -214,6 +214,25 @@ boolean is_human_brain()
   return false;
 }
 
+int find_brain_sections(float x, float y)
+{
+  // BRAIN SECTION 3
+  if (x > 635 || x > 500 && y < 405)
+    return 3;
+  // BRAIN SECTION 2
+  else if ((x > 250 && x <= 500 && y < 420) || (x > 10 && x <= 260 && y < 322))
+    return 2;
+  // BRAIN SECTION 1
+  else if ((x > 10 && x < 260 && y > 270 && y < 570) || (x > 240 && x < 330 && y < 560))
+    return 1;
+  // BRAIN SECTION 0
+  else if (x > 90 && x < 500 && y > 560)
+    return 0;
+
+  // else BRAIN SECTION 4
+  return 4;
+}
+
 ////////////////////////////////////////////////////////
 
 class  Neuron {
@@ -288,62 +307,88 @@ class  Neuron {
       }
     }
 
-    fill_in_synapse_default();
-    // BRAIN SECTION 3
-    if ((fingers == 0 && strength > 0.5 || fingers == 5)
-      && (x > 635 || x > 500 && y < 405 )) {
-      fill_in_synapse_AI();
-      int c = 24;
-      int band = ALPHA;
-      if (is_human_brain())
-        stroke(0 + (c * 2), 255 + (c * 2), 180 - (c * 2), score[band] * 80 + 20); // Alpha=score[brain_section#] Original:Alpha=20
-
+    int band;
+    switch (find_brain_sections(x, y)) {
+      case 3:
+        band = ALPHA;
+        stroke(0 + (24 * 2), 255 + (24 * 2), 180 - (24 * 2), score[band] * 80 + 20); // Alpha=score[brain_section#] Original:Alpha=20
+        break;
+      case 2:
+        band = BETA;
+        stroke(242, 242 - (24 / 2), 13 + 24, score[band] * 80 + 20); // Alpha=score[brain_section#] Original:Alpha=45
+        break;
+      case 1:
+        band = GAMMA;
+        stroke(255 , 159 - (125 / 3), 102 - 125, score[band] * 80 + 20); // Alpha=score[brain_section#] Original:Alpha=20
+        break;
+      case 0:
+        band = DELTA;
+        stroke(255,51,51 + (125 * 1.5),score[band] * 80 + 20); // Alpha=score[brain_section#] Original:Alpha=30
+        break;
+      default : // case 4
+        band = THETA;
+        stroke(255, 128 - (125 / 2),0,score[band] * 80 + 20); // Alpha=score[brain_section#] Original:Alpha=30
+      break;
     }
-
-    // BRAIN SECTION 2
-    else if ((fingers == 1 || fingers == 5)
-          && ((x > 250 && x <= 500 && y < 420) || (x > 10 && x <= 260 && y < 322)))
-    {
+    if (!is_human_brain())
       fill_in_synapse_AI();
-      int band = BETA;
-      int c = 24;
-      if (is_human_brain())
-        stroke(242, 242 - (c / 2), 13 + c, score[band] * 80 + 20); // Alpha=score[brain_section#] Original:Alpha=45
 
-    }
+    // fill_in_synapse_default();
+    // // BRAIN SECTION 3
+    // if ((fingers == 0 && strength > 0.5 || fingers == 5)
+    //   && (x > 635 || x > 500 && y < 405 )) {
+    //   fill_in_synapse_AI();
+    //   int c = 24;
+    //   int band = ALPHA;
+    //   if (is_human_brain())
+    //     stroke(0 + (c * 2), 255 + (c * 2), 180 - (c * 2), score[band] * 80 + 20); // Alpha=score[brain_section#] Original:Alpha=20
 
-    // BRAIN SECTION 1
-    else if ((fingers == 2 || fingers == 5)
-        && ((x > 10 && x < 260 && y > 270 && y < 570) || (x > 240 && x < 330 && y < 560)))
-    {
-      fill_in_synapse_AI();
-      int band = GAMMA;
-      int c = 125;
-      if (is_human_brain())
-        stroke(255 , 159 - (c / 3), 102 - c, score[band] * 80 + 20); // Alpha=score[brain_section#] Original:Alpha=20
+    // }
 
-    }
+    // // BRAIN SECTION 2
+    // else if ((fingers == 1 || fingers == 5)
+    //       && ((x > 250 && x <= 500 && y < 420) || (x > 10 && x <= 260 && y < 322)))
+    // {
+    //   fill_in_synapse_AI();
+    //   int band = BETA;
+    //   int c = 24;
+    //   if (is_human_brain())
+    //     stroke(242, 242 - (c / 2), 13 + c, score[band] * 80 + 20); // Alpha=score[brain_section#] Original:Alpha=45
 
-    // BRAIN SECTION 0
-    else if ((fingers == 3 || fingers == 5)
-      && (x > 90 && x < 500 && y > 560)) {
-      fill_in_synapse_AI();
-      int band = DELTA;
-      int c = 125;
-      if (is_human_brain())
-        stroke(255,51,51 + (c * 1.5),score[band] * 80 + 20); // Alpha=score[brain_section#] Original:Alpha=30
+    // }
 
-    }
+    // // BRAIN SECTION 1
+    // else if ((fingers == 2 || fingers == 5)
+    //     && ((x > 10 && x < 260 && y > 270 && y < 570) || (x > 240 && x < 330 && y < 560)))
+    // {
+    //   fill_in_synapse_AI();
+    //   int band = GAMMA;
+    //   int c = 125;
+    //   if (is_human_brain())
+    //     stroke(255 , 159 - (c / 3), 102 - c, score[band] * 80 + 20); // Alpha=score[brain_section#] Original:Alpha=20
 
-    // BRAIN SECTION 4
-    else if(fingers == 4 || fingers == 5) {
-      fill_in_synapse_AI();
-      int band = THETA;
-      int c = 125;
-      if (is_human_brain())
-        stroke(255, 128 - (c / 2),0,score[band] * 80 + 20); // Alpha=score[brain_section#] Original:Alpha=30
+    // }
 
-    }
+    // // BRAIN SECTION 0
+    // else if ((fingers == 3 || fingers == 5)
+    //   && (x > 90 && x < 500 && y > 560)) {
+    //   fill_in_synapse_AI();
+    //   int band = DELTA;
+    //   int c = 125;
+    //   if (is_human_brain())
+    //     stroke(255,51,51 + (c * 1.5),score[band] * 80 + 20); // Alpha=score[brain_section#] Original:Alpha=30
+
+    // }
+
+    // // BRAIN SECTION 4
+    // else if(fingers == 4 || fingers == 5) {
+    //   fill_in_synapse_AI();
+    //   int band = THETA;
+    //   int c = 125;
+    //   if (is_human_brain())
+    //     stroke(255, 128 - (c / 2),0,score[band] * 80 + 20); // Alpha=score[brain_section#] Original:Alpha=30
+
+    // }
 
     for(int i = 0;i<s.length;i+=1) {
       line(n[s[i].B].xx,n[s[i].B].yy,xx,yy);
