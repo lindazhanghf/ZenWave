@@ -299,8 +299,8 @@ class  Neuron {
       int c = 24;
       int band = ALPHA;
       if (is_human_brain())
+        stroke(0 + (c * 2), 255 + (c * 2), 180 - (c * 2), score[band] * 100); // Alpha=score[brain_section#] Original:Alpha=20
         // stroke(255 * score[band] * 2, 255 * score[band] * 2, 37 * score[band] * 2, 45);
-        stroke(242, 242 - (c / 2), 13 + c, score[band] * 100); // Alpha=score[brain_section#] Original:Alpha=45
 
     }
 
@@ -313,7 +313,7 @@ class  Neuron {
       int c = 24;
       if (is_human_brain())
         // stroke(48 * score[band] * 2, 255 * score[band] * 2, 140 * score[band] * 2, 45);
-        stroke(0 + (c * 2), 255 + (c * 2), 180 - (c * 2), score[band] * 100); // Alpha=score[brain_section#] Original:Alpha=20
+        stroke(242, 242 - (c / 2), 13 + c, score[band] * 100); // Alpha=score[brain_section#] Original:Alpha=45
 
     }
 
