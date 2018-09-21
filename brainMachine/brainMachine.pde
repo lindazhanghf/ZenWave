@@ -296,9 +296,11 @@ class  Neuron {
     if ((fingers == 0 && strength > 0.5 || fingers == 5)
       && (x > 635 || x > 500 && y < 405 )) {
       fill_in_synapse_AI();
-    int c = 24;
+      int c = 24;
+      int band = ALPHA;
       if (is_human_brain())
-        stroke(242, 242 - (c / 2), 13 + c, 45); // Alpha=score[brain_section#] Original:Alpha=45
+        // stroke(255 * score[band] * 2, 255 * score[band] * 2, 37 * score[band] * 2, 45);
+        stroke(242, 242 - (c / 2), 13 + c, score[band] * 100); // Alpha=score[brain_section#] Original:Alpha=45
 
     }
 
@@ -307,9 +309,11 @@ class  Neuron {
           && ((x > 250 && x <= 500 && y < 420) || (x > 10 && x <= 260 && y < 322)))
     {
       fill_in_synapse_AI();
+      int band = BETA;
       int c = 24;
       if (is_human_brain())
-        stroke(0 + (c * 2), 255 + (c * 2), 180 - (c * 2), 45); // Alpha=score[brain_section#] Original:Alpha=20
+        // stroke(48 * score[band] * 2, 255 * score[band] * 2, 140 * score[band] * 2, 45);
+        stroke(0 + (c * 2), 255 + (c * 2), 180 - (c * 2), score[band] * 100); // Alpha=score[brain_section#] Original:Alpha=20
 
     }
 
@@ -318,9 +322,11 @@ class  Neuron {
         && ((x > 10 && x < 260 && y > 270 && y < 570) || (x > 240 && x < 330 && y < 560)))
     {
       fill_in_synapse_AI();
+      int band = GAMMA;
       int c = 125;
       if (is_human_brain())
-        stroke(255 , 159 - (c / 3), 102 - c, 45); // Alpha=score[brain_section#] Original:Alpha=20
+        // stroke(255 * score[band] * 2, 165 * score[band] * 2, 100 * score[band] * 2, 45);
+        stroke(255 , 159 - (c / 3), 102 - c, score[band] * 100); // Alpha=score[brain_section#] Original:Alpha=20
 
     }
 
@@ -328,18 +334,22 @@ class  Neuron {
     else if ((fingers == 3 || fingers == 5)
       && (x > 90 && x < 500 && y > 560)) {
       fill_in_synapse_AI();
-    int c = 125;
+      int band = DELTA;
+      int c = 125;
       if (is_human_brain())
-        stroke(255,51,51 + (c * 1.5),45); // Alpha=score[brain_section#] Original:Alpha=30
+        // stroke(255 * score[band] * 2, 60 * score[band] * 2, 80 * score[band] * 2, 45);
+        stroke(255,51,51 + (c * 1.5),score[band] * 100); // Alpha=score[brain_section#] Original:Alpha=30
 
     }
 
     // BRAIN SECTION 4
     else if(fingers == 4 || fingers == 5) {
       fill_in_synapse_AI();
+      int band = THETA;
       int c = 125;
       if (is_human_brain())
-        stroke(255, 128 - (c / 2),0,45); // Alpha=score[brain_section#] Original:Alpha=30
+        // stroke(255 * score[band] * 2, 120 * score[band] * 2, 0, 45);
+        stroke(255, 128 - (c / 2),0,score[band] * 100); // Alpha=score[brain_section#] Original:Alpha=30
 
     }
 
@@ -377,8 +387,8 @@ class  Neuron {
   void fill_in_synapse_AI() {
     stroke(0 + xColor, 255 - xColor, 0 + (xColor * 3), 45);
     // stroke(0 + colors[index], 255 - colors[index], 0 + (colors[index] * 3), 45);
-    // int c = (int)(abs((score[ALPHA] * 50) + 12)) * 2;
-    // stroke(0 + c, 255 - c, 0 + (c * 3), 45);
+    // int col = (int)(abs((score[ALPHA] * 50) + 12)) * 2;
+    // stroke(0 + col, 255ama amahth - col, 0 + (col * 3), 45);
   }
 
 }

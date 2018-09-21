@@ -176,8 +176,8 @@ void getHeadbandStatus(OscMessage msg) {
             changeState(IDLE);
         }
     }
-    else
-        debugPrint("No headband status.");
+    // else
+    //     debugPrint("No headband status.");
 
     if (state > IDLE && msg.checkAddrPattern(muse_name + "/elements/horseshoe")==true)
     {
@@ -192,16 +192,15 @@ void getHeadbandStatus(OscMessage msg) {
         if (state ==  FITTING && sum_precision == 4)
             changeState(DETECTION); // TODO: skipped CALIBRATION    s
     }
-    else {
-        debugPrint(" No horseshoe status\n");
-    }
+    // else
+    //     debugPrint(" No horseshoe status\n");
 }
 
 /* Absolute Band Power */
 void getAbsolute(OscMessage msg) {
-    boolean has_NaN = get_elements_data(msg, "absolute", absolute);
+    boolean success = get_elements_data(msg, "absolute", absolute);
 
-    if (!has_NaN && state == DETECTION)
+    if (success && state == DETECTION)
         detect_calmness();
 }
 
@@ -212,39 +211,40 @@ void getRelative(OscMessage msg) {
 
 /* Band Power Score */
 void getScore(OscMessage msg) {
-    boolean has_NaN = get_elements_data(msg, "session_score", absolute); // TODO: score
-    if (has_NaN)
+    boolean success = get_elements_data(msg, "session_score", score); // TODO: score
+    if (!success)
         return;
 
-    for (int i = 0; i < NUM_BAND; i++)
-    {
-        colors[i] = (abs(((1 - absolute[i]) * 50) + 12)) * 2; // From Pedro's xColor formula
-        println(BANDS[i], " color: ", colors[i]);
-    }
+    // for (int i = 0; i < 5; i++) {
+    //     if (msg.checkAddrPattern(muse_name + "/elements/" + BANDS[i] + "_" + "session_score")) {
+    //         println(" " + BANDS[i] + "=" + String.valueOf(score[i]));
+    //         break;
+    //     }
+    // }
 }
 
 boolean get_elements_data(OscMessage msg, String element_name, float[] data_array) {
-    boolean has_NaN = false;
     // float[] result_data = new float[5];
-
     for (int i = 0; i < 5; i++) {
         if (msg.checkAddrPattern(muse_name + "/elements/" + BANDS[i] + "_" + element_name)) {
             float sum = 0;
-                for (int j = 0; j < NUM_CHANNEL; j++) {
-                    sum += get_OSC_value(msg, j);
-                }
-                debugPrint("  " + BANDS[i] + "=" + String.valueOf(sum) + "\n");
-
-            if (!Double.isNaN(sum))
-                // result_data[i] = sum/4;
-                data_array[i] = sum/4;
-            else {
-                has_NaN = true;
-                debugPrint(" " + BANDS[i] + "  NaN");
+            for (int j = 0; j < NUM_CHANNEL; j++) {
+                sum += get_OSC_value(msg, j);
             }
+            debugPrint("  " + BANDS[i] + "=" + String.valueOf(sum) + "\n");
+
+            if (!Double.isNaN(sum)) {
+                data_array[i] = sum/4;
+                debugPrint(" " + BANDS[i] + "=" + String.valueOf(data_array[i]));
+            }
+            else {
+                debugPrint(" " + BANDS[i] + "  NaN");
+                return false; // sum is NaN (not a number)
+            }
+            break;
         }
     }
-    return has_NaN;
+    return true; // sum is a number
 }
 
 /* Blink */
