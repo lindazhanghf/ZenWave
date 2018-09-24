@@ -77,6 +77,10 @@ void draw_Muse_Reader() {
 
     visualizeAbsolute();
 
+    // testing
+    if (keyPressed && key == ENTER) {
+        changeState(BCI);
+    }
 }
 
 void changeState(int new_state) {
@@ -115,7 +119,9 @@ void oscEvent(OscMessage msg) {
             getScore(msg);
             break;
 
-        default :
+        default : // AI state
+            getScore(msg);
+            get_elements_data(msg, "session_score", absolute); // To visualize score using abs
             break;
     }
 }
@@ -211,9 +217,9 @@ void getRelative(OscMessage msg) {
 
 /* Band Power Score */
 void getScore(OscMessage msg) {
-    boolean success = get_elements_data(msg, "session_score", score); // TODO: score
-    if (!success)
-        return;
+    boolean success = get_elements_data(msg, "session_score", score);
+    // if (!success)
+    //     return;
 
     // for (int i = 0; i < 5; i++) {
     //     if (msg.checkAddrPattern(muse_name + "/elements/" + BANDS[i] + "_" + "session_score")) {

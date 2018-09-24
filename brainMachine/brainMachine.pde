@@ -128,6 +128,7 @@ void setup() {
 
   fingers = 5;
   // xColor = (abs((rectX / 20) + 12)) * 2;
+  // changeState(BCI);
 
 }
 
@@ -203,6 +204,7 @@ void draw() {
   text(currentState, 900,10);
   text("rectY", 800, 40);
   text(rectY, 900, 40);
+
 }
 
 // Helper Function
@@ -333,62 +335,6 @@ class  Neuron {
     if (!is_human_brain())
       fill_in_synapse_AI();
 
-    // fill_in_synapse_default();
-    // // BRAIN SECTION 3
-    // if ((fingers == 0 && strength > 0.5 || fingers == 5)
-    //   && (x > 635 || x > 500 && y < 405 )) {
-    //   fill_in_synapse_AI();
-    //   int c = 24;
-    //   int band = ALPHA;
-    //   if (is_human_brain())
-    //     stroke(0 + (c * 2), 255 + (c * 2), 180 - (c * 2), score[band] * 80 + 20); // Alpha=score[brain_section#] Original:Alpha=20
-
-    // }
-
-    // // BRAIN SECTION 2
-    // else if ((fingers == 1 || fingers == 5)
-    //       && ((x > 250 && x <= 500 && y < 420) || (x > 10 && x <= 260 && y < 322)))
-    // {
-    //   fill_in_synapse_AI();
-    //   int band = BETA;
-    //   int c = 24;
-    //   if (is_human_brain())
-    //     stroke(242, 242 - (c / 2), 13 + c, score[band] * 80 + 20); // Alpha=score[brain_section#] Original:Alpha=45
-
-    // }
-
-    // // BRAIN SECTION 1
-    // else if ((fingers == 2 || fingers == 5)
-    //     && ((x > 10 && x < 260 && y > 270 && y < 570) || (x > 240 && x < 330 && y < 560)))
-    // {
-    //   fill_in_synapse_AI();
-    //   int band = GAMMA;
-    //   int c = 125;
-    //   if (is_human_brain())
-    //     stroke(255 , 159 - (c / 3), 102 - c, score[band] * 80 + 20); // Alpha=score[brain_section#] Original:Alpha=20
-
-    // }
-
-    // // BRAIN SECTION 0
-    // else if ((fingers == 3 || fingers == 5)
-    //   && (x > 90 && x < 500 && y > 560)) {
-    //   fill_in_synapse_AI();
-    //   int band = DELTA;
-    //   int c = 125;
-    //   if (is_human_brain())
-    //     stroke(255,51,51 + (c * 1.5),score[band] * 80 + 20); // Alpha=score[brain_section#] Original:Alpha=30
-
-    // }
-
-    // // BRAIN SECTION 4
-    // else if(fingers == 4 || fingers == 5) {
-    //   fill_in_synapse_AI();
-    //   int band = THETA;
-    //   int c = 125;
-    //   if (is_human_brain())
-    //     stroke(255, 128 - (c / 2),0,score[band] * 80 + 20); // Alpha=score[brain_section#] Original:Alpha=30
-
-    // }
 
     for(int i = 0;i<s.length;i+=1) {
       line(n[s[i].B].xx,n[s[i].B].yy,xx,yy);
@@ -424,6 +370,7 @@ class  Neuron {
   void fill_in_synapse_AI() {
     int col = (int)(abs((score[ALPHA] * 50) + 12)) * 2;
     stroke(0 + col, 255 - col, 0 + (col * 3), 45);
+    // println(score[ALPHA]);
   }
 
 }
@@ -485,37 +432,41 @@ class Signal {
       if(deadcount < 0) {
         deadcount = deadnum;
 
-        for(int i = 0;i<10;i++) { // To add blur in explosion
+        for(int i = 1;i<10;i++) { // To add blur in explosion
 
           pushStyle(); // EXPLOSION COLOR PARAMETERS
-          noFill();
-          noStroke();
 
-          if ((fingers == 0)
-            && (x > 635 || x > 500 && y < 405)) {
-              fill_in_explosion();
-          } if ((fingers == 1)
-            && (x > 250 && x <= 500 && y < 420 || x > 10 && x <= 260 && y < 322)) {
-              fill_in_explosion();
-          } if ((fingers == 2)
-            && (x > 10 && x < 260 && y > 270 && y < 570 || x > 240 && x < 330 && y < 560)) {
-              fill_in_explosion();
-          } if ((fingers == 3)
-            && (x > 90 && x < 500 && y > 560)) {
-              fill_in_explosion();
-          } if ((fingers == 4)
-            && (x > 302 && x < 638 && y > 389 && y < 554 || x > 480 && x < 680 && y > 555)) {
-              fill_in_explosion();
-          }
+          // noFill();
+          // noStroke();
+          fill_in_explosion();
 
-          if (fingers >= 5) {
-            fill_in_explosion();
-          }
+          // if ((fingers == 0)
+          //   && (x > 635 || x > 500 && y < 405)) {
+          //     fill_in_explosion();
+          // } if ((fingers == 1)
+          //   && (x > 250 && x <= 500 && y < 420 || x > 10 && x <= 260 && y < 322)) {
+          //     fill_in_explosion();
+          // } if ((fingers == 2)
+          //   && (x > 10 && x < 260 && y > 270 && y < 570 || x > 240 && x < 330 && y < 560)) {
+          //     fill_in_explosion();
+          // } if ((fingers == 3)
+          //   && (x > 90 && x < 500 && y > 560)) {
+          //     fill_in_explosion();
+          // } if ((fingers == 4)
+          //   && (x > 302 && x < 638 && y > 389 && y < 554 || x > 480 && x < 680 && y > 555)) {
+          //     fill_in_explosion();
+          // }
+
+          // if (fingers >= 5) {
+          //   fill_in_explosion();
+          // }
 
 //////////////// END OF PARAMETERS
 
           // Position & Size of explosion
-          ellipse(x, y, (abs((rectY / 300) - 4)) * i, (abs((rectY / 300) - 4)) * i);
+          // ellipse(x, y, (abs((rectY / 300) - 4)) * i, (abs((rectY / 300) - 4)) * i);
+          ellipse(x, y, (abs((absolute[ALPHA] * 3))) * i, (abs((absolute[ALPHA] * 3))) * i);
+          // println(abs(absolute[ALPHA] * 3) * i);
           popStyle();
         }
 
