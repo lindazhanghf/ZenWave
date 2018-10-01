@@ -56,7 +56,6 @@ void resetNeurons() {
       } else {
         n[i].x = random(302, 680);
         n[i].y = random(390, 646);
-        // resetDone = false; // TODO: deleted
       }
 
     }
@@ -97,7 +96,6 @@ void resetNeurons() {
       } else {
         n[i].x = aiBrainX += 50;
         n[i].y = aiBrainY;
-        // resetDone = false; // TODO: deleted
 
         if(aiBrainX >= 950) {
           aiBrainY += 25;
@@ -164,7 +162,6 @@ void idleReset() {
       } else {
         n[i].x = random(302, 680);
         n[i].y = random(390, 646);
-        // resetDone = false; // TODO: deleted
       }
 
     }

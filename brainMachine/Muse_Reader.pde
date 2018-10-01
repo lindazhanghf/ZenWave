@@ -13,6 +13,7 @@ int recvPort = 7980;
 OscP5 oscP5;
 
 // MACROS
+int CALM_TIME = 10; // How many consecutive seconds of calm time must be detected before entering A.I state
 int NUM_CHANNEL = 4;
 int NUM_BAND = 5;
 String[] BANDS = {"alpha", "beta", "gamma", "delta", "theta"};
@@ -53,10 +54,14 @@ int rect_width = 50;
 // State Machine
 int state = IDLE;
 int calm_start_time = -1;
+int calibration_start_time = -1;
 
 // for testing
-float beta_upper_limit = 0.3;
+float beta_upper_limit = 0.3; // Calculated by average of of Beta absolute band power during calibration
 int time_since_detected = -1;
+int time_since_calibrating = -1;
+float beta_sum;               // Sum of Beta absolute band power during calibration state
+int beta_data_points;         // The number of beta data points collected
 
 void draw_Muse_Reader() {
     // background(255,255,255);
@@ -67,31 +72,43 @@ void draw_Muse_Reader() {
     }
 
     // testing
-    text(state_names[state], 5, 15);
+    // text(state_names[state], 5, 15);
+    text("State:", 800,10);
+    text(state_names[state], 900,10);
     switch (state) {
-        case 4:
-            if (time_since_detected>0) println(time_since_detected);
+        case 2: // CALIBRATION
+            time_since_calibrating = current_time() - calibration_start_time;
+            println("Calibration: ", time_since_calibrating, " seconds;   ", beta_data_points);
+            if (time_since_calibrating > 20)
+                changeState(DETECTION);
+            break;
+        case 4: // DETECTION
+            text(beta_upper_limit, 900,20);
+            if (time_since_detected>0) println(time_since_detected, "   ", beta_upper_limit);
             break;
         default: break;
     }
 
-    visualizeAbsolute();
+    // visualizeAbsolute();
 
-    // testing
-    if (keyPressed && key == ENTER) {
-        changeState(BCI);
-    }
 }
 
 void changeState(int new_state) {
-    if (new_state == DETECTION)
-    {
-        // currentState = 1;
+    if (new_state == CALIBRATION) {
+        humBrainLoop.loop(1);
+        calibration_start_time = current_time();
     }
+
+    else if (new_state == DETECTION) {
+        success.play();
+        beta_upper_limit = beta_sum / beta_data_points;
+        if (beta_upper_limit < 0.1)
+            beta_upper_limit = 0.1;
+        println("Beta Upper Limit = ", beta_upper_limit, " !!!!!!!!!!!!!!!!!");
+    }
+
     else if (new_state == BCI)
-    {
         rectY = 50;
-    }
 
     println("Change to new state: ", state_names[new_state]);
 
@@ -111,17 +128,19 @@ void oscEvent(OscMessage msg) {
 
     switch (state)
     {
-        case 1:
-        case 2:
-        case 3:
-        case 4:
+        // case 0: // IDLE
+        // case 1: // FITTING
+        case 2: // CALIBRATION
+            getAbsolute(msg);
+            break;
+
+        case 4: // DETECTION
             getAbsolute(msg);
             getScore(msg);
             break;
 
-        default : // AI state
-            getScore(msg);
-            get_elements_data(msg, "session_score", absolute); // To visualize score using abs
+        default :
+            get_elements_data(msg, "relative", absolute);
             break;
     }
 }
@@ -149,9 +168,8 @@ void detect_calmness() {
         if (calm_start_time < 0)
             calm_start_time = curr_time; // Reset start_time
 
-        else if (curr_time - calm_start_time > 5) { // 'Calm' for 10 seconds TODO
+        else if (curr_time - calm_start_time > CALM_TIME) { // 'Calm' for 10 seconds
             changeState(BCI);
-            success.play();
         }
 
         //test
@@ -182,8 +200,6 @@ void getHeadbandStatus(OscMessage msg) {
             changeState(IDLE);
         }
     }
-    // else
-    //     debugPrint("No headband status.");
 
     if (state > IDLE && msg.checkAddrPattern(muse_name + "/elements/horseshoe")==true)
     {
@@ -192,14 +208,13 @@ void getHeadbandStatus(OscMessage msg) {
             hsi_precision[i] = (int)get_OSC_value(msg, i);
             sum_precision += hsi_precision[i];
             if (hsi_precision[i] > 2)
-                calm_start_time = -1;
+                calm_start_time = -1;                   // Not fitted, restart clam detection
         }
 
         if (state ==  FITTING && sum_precision == 4)
-            changeState(DETECTION); // TODO: skipped CALIBRATION    s
+            changeState(CALIBRATION);
+
     }
-    // else
-    //     debugPrint(" No horseshoe status\n");
 }
 
 /* Absolute Band Power */
@@ -208,6 +223,11 @@ void getAbsolute(OscMessage msg) {
 
     if (success && state == DETECTION)
         detect_calmness();
+    else if (success && state == CALIBRATION && msg.checkAddrPattern(muse_name + "/elements/beta_absolute") && time_since_calibrating > 10)
+    {
+        beta_sum += absolute[BETA];
+        beta_data_points++;
+    }
 }
 
 /* Relative Band Power */
@@ -217,16 +237,7 @@ void getRelative(OscMessage msg) {
 
 /* Band Power Score */
 void getScore(OscMessage msg) {
-    boolean success = get_elements_data(msg, "session_score", score);
-    // if (!success)
-    //     return;
-
-    // for (int i = 0; i < 5; i++) {
-    //     if (msg.checkAddrPattern(muse_name + "/elements/" + BANDS[i] + "_" + "session_score")) {
-    //         println(" " + BANDS[i] + "=" + String.valueOf(score[i]));
-    //         break;
-    //     }
-    // }
+    get_elements_data(msg, "session_score", score);
 }
 
 boolean get_elements_data(OscMessage msg, String element_name, float[] data_array) {
