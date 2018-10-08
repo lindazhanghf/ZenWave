@@ -13,7 +13,7 @@ int recvPort = 7980;
 OscP5 oscP5;
 
 // MACROS
-int CALM_TIME = 10; // How many consecutive seconds of calm time must be detected before entering A.I state
+int CALM_TIME = 5; // How many consecutive seconds of calm time must be detected before entering A.I state
 int NUM_CHANNEL = 4;
 int NUM_BAND = 5;
 String[] BANDS = {"alpha", "beta", "gamma", "delta", "theta"};
@@ -41,6 +41,7 @@ int[] hsi_precision = new int[4];
 float[] relative = new float[5];
 float[] absolute = new float[5];
 float[] score = new float[5];
+boolean headband_on = false;
 
 // Audio File
 SoundFile success;
@@ -62,28 +63,37 @@ int time_since_detected = -1;
 int time_since_calibrating = -1;
 float beta_sum;               // Sum of Beta absolute band power during calibration state
 int beta_data_points;         // The number of beta data points collected
+int last_reset_time = -1;
+int curr_time;
+
+void setup_Muse_Reader() {
+  oscP5 = new OscP5(this, recvPort);
+  success = new SoundFile (this, "success.wav");
+
+  curr_time = current_time();
+  last_reset_time = curr_time;
+}
 
 void draw_Muse_Reader() {
-    // background(255,255,255);
+    curr_time = current_time();
     fill(0);
-    for (int i=0; i< NUM_CHANNEL; i++) {
-        // text(String.valueOf(i), 10, 10 + 10 * i);
-        text(String.valueOf(hsi_precision[i]), 30, 25 + 10 * i);
-    }
 
     // testing
-    // text(state_names[state], 5, 15);
-    text("State:", 800,10);
-    text(state_names[state], 900,10);
+    text("State:", 800, 15);
+    text(state_names[state], 900, 15);
     switch (state) {
         case 2: // CALIBRATION
-            time_since_calibrating = current_time() - calibration_start_time;
-            println("Calibration: ", time_since_calibrating, " seconds;   ", beta_data_points);
+            time_since_calibrating =  curr_time - calibration_start_time;
+            println("Calibration: ", time_since_calibrating, " seconds;   ");
             if (time_since_calibrating > 20)
+                changeState(PREPARATION);
+            break;
+        case 3: // PREPARATION
+            if (time_since_calibrating > 5) // Wait 5 seconds before starting the detection
                 changeState(DETECTION);
             break;
         case 4: // DETECTION
-            text(beta_upper_limit, 900,20);
+            text(beta_upper_limit, 900,25);
             if (time_since_detected>0) println(time_since_detected, "   ", beta_upper_limit);
             break;
         default: break;
@@ -91,18 +101,29 @@ void draw_Muse_Reader() {
 
     // visualizeAbsolute();
 
+    // reset neurons
+    if (curr_time - last_reset_time > 60) {
+        idleReset();
+        last_reset_time = curr_time;
+    }
 }
 
 void changeState(int new_state) {
+    idleReset();
+
     if (new_state == CALIBRATION) {
         humBrainLoop.loop(1);
-        calibration_start_time = current_time();
+        calibration_start_time = curr_time;
+    }
+
+    else if (new_state == PREPARATION) {
+        calibration_start_time = curr_time;
     }
 
     else if (new_state == DETECTION) {
         success.play();
         beta_upper_limit = beta_sum / beta_data_points;
-        if (beta_upper_limit < 0.1)
+        if (beta_upper_limit < 0.1 || Float.isNaN(beta_upper_limit))
             beta_upper_limit = 0.1;
         println("Beta Upper Limit = ", beta_upper_limit, " !!!!!!!!!!!!!!!!!");
     }
@@ -128,8 +149,6 @@ void oscEvent(OscMessage msg) {
 
     switch (state)
     {
-        // case 0: // IDLE
-        // case 1: // FITTING
         case 2: // CALIBRATION
             getAbsolute(msg);
             break;
@@ -163,8 +182,6 @@ void visualizeAbsolute() {
 void detect_calmness() {
     if (absolute[ALPHA] > absolute[BETA])
     {
-        int curr_time = current_time();
-
         if (calm_start_time < 0)
             calm_start_time = curr_time; // Reset start_time
 
@@ -172,7 +189,7 @@ void detect_calmness() {
             changeState(BCI);
         }
 
-        //test
+        // test
         else {
             time_since_detected = curr_time - calm_start_time;
             // println(minute(), ":", second());
@@ -194,9 +211,11 @@ void getHeadbandStatus(OscMessage msg) {
     {
         debugPrint("Touching forehead? " + String.valueOf(msg.get(0).intValue()));
         if (msg.checkTypetag("i") && msg.get(0).intValue() == 1) {
+            headband_on = true;
             if (state == IDLE)
                 changeState(FITTING);
         } else {
+            headband_on = false;
             changeState(IDLE);
         }
     }
@@ -208,7 +227,7 @@ void getHeadbandStatus(OscMessage msg) {
             hsi_precision[i] = (int)get_OSC_value(msg, i);
             sum_precision += hsi_precision[i];
             if (hsi_precision[i] > 2)
-                calm_start_time = -1;                   // Not fitted, restart clam detection
+                calm_start_time = -1;                   // Not fitted, restart calm detection
         }
 
         if (state ==  FITTING && sum_precision == 4)

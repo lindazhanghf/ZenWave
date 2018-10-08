@@ -126,7 +126,7 @@ void idleReset() {
 
   int randomSpawn = int(random(0,5));
 
-  if(idleChange == true) {
+  // if(idleChange == true) {
     for(int i = 0; i < n.length; i++) { // Sections of Brain
 
       if(i < 4) {
@@ -166,7 +166,7 @@ void idleReset() {
 
     }
 
-    fingerChange = false;
+    // idleChange = false;
 
     for(int i = 0;i<n.length;i++) {
       n[i].makeSynapse();
@@ -175,6 +175,6 @@ void idleReset() {
     for(int i = 0;i<n[0].s.length;i++){
       n[0].makeSignal(i);
     }
-  }
+  // }
 
 }
