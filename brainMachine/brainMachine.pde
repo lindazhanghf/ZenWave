@@ -332,7 +332,8 @@ class  Neuron {
   }
 
   void drawNeuron () {
-    drawSynapse();
+    if (!idleChange)
+      drawSynapse();
     xx += (x-xx) / 8.0; // Speed of re-organization of neurons
     yy += (y-yy) / 8.0; // Speed of re-organization of neurons
     move(); // Uncomment this to enable movement of neural networks
