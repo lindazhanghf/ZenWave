@@ -78,6 +78,7 @@ void setup_Muse_Reader() {
 }
 
 void draw_Muse_Reader() {
+    // println("FrameRate =", frameRate);
     curr_time = current_time();
     fill(0);
 
@@ -130,7 +131,7 @@ void changeState(int new_state) {
     else if (new_state == BCI)
         rectY = 50;
     else if (new_state == CALIBRATION) {
-        resetBrain();
+        // resetBrain();
         humBrainLoop.loop(1);
         calibration_start_time = curr_time;
     }

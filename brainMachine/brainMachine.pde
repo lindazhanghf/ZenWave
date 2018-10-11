@@ -305,14 +305,14 @@ class  Neuron {
   }
 
   void drawSignal () {
-    println("\n", sig.length, " signals ");  //print
+    // println("\n", sig.length, " signals ");  //print
 
     if(sig.length > 0) {
       for(int i = 0; i < sig.length; i++) {
-        print(" ", i); //print
+        // print(" ", i); //print
         if(sig[i] != null && sig[i].running) {
           pushStyle();
-          print("..."); //print
+          // print("_"); //print
 
           if(is_human_brain()) {
             strokeWeight(1); // Size of Synapse
@@ -328,12 +328,12 @@ class  Neuron {
 
 
           noFill();
-          print(sig[i].x, "|", sig[i].lx); //print
+          // print(sig[i].x, "|", sig[i].lx); //print
           line(sig[i].x, sig[i].y, sig[i].lx, sig[i].ly);
           popStyle();
 
           sig[i].step();
-          print("✓ "); //print
+          // print("✓ "); //print
         }
       }
     }
