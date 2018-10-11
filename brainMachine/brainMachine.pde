@@ -165,20 +165,18 @@ void draw() {
   ////////////////////////////////////////////////////////
 
 
-  checkGesture += 0.5;
+  // checkGesture += 0.5;
 
-  if (checkGesture % 0.5 == 0 && changeGesture == true || checkGesture % 1 == 0 && idleChange == true){
-   changeGesture = false;
-   idleChange = false;
-  } else if(wait == true && checkGesture % 41 == 0) {
-   wait = false;
-  } else if(checkGesture % 691 == 0 && fingers < 1 && strength <= 0) {
-   idleChange = true;
-  }
+  // if (checkGesture % 0.5 == 0 && changeGesture == true || checkGesture % 1 == 0 && idleChange == true){
+  //  changeGesture = false;
+  //  idleChange = false;
+  // } else if(wait == true && checkGesture % 41 == 0) {
+  //  wait = false;
+  // } else if(checkGesture % 691 == 0 && fingers < 1 && strength <= 0) {
+  //  idleChange = true;
+  // }
 
   // idleReset();
-
-
   draw_Muse_Reader();
 }
 
@@ -256,60 +254,35 @@ class  Neuron {
 
 
 
-  void drawSynapse() {
+  void
 
-    if(sig.length > 0) {
-      for(int i = 0; i < sig.length; i+= 1) {
-        if(sig[i].running) {
-          pushStyle();
-
-
-          if(is_human_brain()) {
-            strokeWeight(1); // Size of Synapse
-          } else if(!is_human_brain()){
-            strokeWeight(1.5); // Size of Synapse
-          }
-
-          if(is_human_brain()) {
-            stroke(255, 153, 51, 70); // Color of synape
-          } else if(!is_human_brain()){
-            stroke(255, 0, 102, 80); // Color of synape
-          }
-
-          noFill();
-          line(sig[i].x, sig[i].y, sig[i].lx, sig[i].ly);
-          popStyle();
-          sig[i].step();
-        }
-      }
-    }
-
+  drawSynapse() {
     int band;
     switch (find_brain_sections(x, y)) {
       case 3:
         band = ALPHA;
-        if (hsi_precision[3] > 0 && hsi_precision[3] < 4)
+        if (hsi_precision[3] > 0 && hsi_precision[3] < 2)
           stroke(0 + (24 * 2), 255 + (24 * 2), 180 - (24 * 2), score[band] * 80 + 20);
         else
           stroke(150, score[band] * 80 + 20);
         break;
       case 2:
         band = BETA;
-        if (hsi_precision[2] > 0 && hsi_precision[2] < 4)
+        if (hsi_precision[2] > 0 && hsi_precision[2] < 2)
           stroke(242, 242 - (24 / 2), 13 + 24, score[band] * 80 + 20);
         else
           stroke(150, score[band] * 80 + 20);
         break;
       case 1:
         band = GAMMA;
-        if (hsi_precision[1] > 0 && hsi_precision[1] < 4)
+        if (hsi_precision[1] > 0 && hsi_precision[1] < 2)
           stroke(255 , 159 - (125 / 3), 102 - 125, score[band] * 80 + 20);
         else
           stroke(150, score[band] * 80 + 20);
         break;
       case 0:
         band = DELTA;
-        if (hsi_precision[0] > 0 && hsi_precision[0] < 4)
+        if (hsi_precision[0] > 0 && hsi_precision[0] < 2)
           stroke(255,51,51 + (125 * 1.5),score[band] * 80 + 20);
         else
           stroke(150, score[band] * 80 + 20);
@@ -331,15 +304,58 @@ class  Neuron {
 
   }
 
-  void drawNeuron () {
-    if (!idleChange)
-      drawSynapse();
-    xx += (x-xx) / 8.0; // Speed of re-organization of neurons
-    yy += (y-yy) / 8.0; // Speed of re-organization of neurons
-    move(); // Uncomment this to enable movement of neural networks
+  void drawSignal () {
+    println("\n", sig.length, " signals ");  //print
+
+    if(sig.length > 0) {
+      for(int i = 0; i < sig.length; i++) {
+        print(" ", i); //print
+        if(sig[i] != null && sig[i].running) {
+          pushStyle();
+          print("..."); //print
+
+          if(is_human_brain()) {
+            strokeWeight(1); // Size of Synapse
+          } else {
+            strokeWeight(1.5); // Size of Synapse
+          }
+
+          if(is_human_brain()) {
+            stroke(255, 153, 51, 70); // Color of synape
+          } else {
+            stroke(255, 0, 102, 80); // Color of synape
+          }
+
+
+          noFill();
+          print(sig[i].x, "|", sig[i].lx); //print
+          line(sig[i].x, sig[i].y, sig[i].lx, sig[i].ly);
+          popStyle();
+
+          sig[i].step();
+          print("✓ "); //print
+        }
+      }
+    }
   }
 
-  void move() {
+  void drawNeuron () {
+
+    if (!idleChange) {
+      if (state > IDLE)
+        drawSignal();
+
+      drawSynapse();
+    }
+
+
+    xx += (x-xx) / 8.0; // Speed of re-organization of neurons
+    yy += (y-yy) / 8.0; // Speed of re-organization of neurons
+
+    randomMovement(); // Uncomment this to enable movement of neural networks
+  }
+
+  void randomMovement() {
 //    x+=(noise(id+BframeCount/10.0)-0.5);
 //    y+=(noise(id*5+frameCount/10.0)-0.5);
     x+=(random(-0.4,0.4));
@@ -352,7 +368,7 @@ class  Neuron {
   void fill_in_synapse_default() {
     if(is_human_brain()){
       stroke(77, 142, 159, 45);
-    } else if(!is_human_brain()){
+    } else {
       stroke(0, 51, 153, 45);
     }
   }
@@ -492,7 +508,7 @@ class Signal {
   {
     if(is_human_brain()){
       fill(255,20);
-    } else if(!is_human_brain()){
+    } else {
       fill(0, 102, 204, 20);
     }
   }

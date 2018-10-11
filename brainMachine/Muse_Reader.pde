@@ -8,16 +8,16 @@ import oscP5.*;
 boolean debug = false;
 
 //OSC
-String muse_name = "muse"; // "muse" default setting; "/muse" if via Muse Direct app
-int recvPort = 7980;
+String muse_name = "muse"; // "muse" default setting; "/muse" if via Muse Monitor app
+int recvPort = 8980;
 OscP5 oscP5;
 
 // MACROS
-int CALM_TIME = 10; // How many consecutive seconds of calm time must be detected before entering A.I state
+int CALM_TIME = 5; // How many consecutive seconds of calm time must be detected before entering A.I state
 int NUM_CHANNEL = 4;
 int NUM_BAND = 5;
-String[] BANDS = {"alpha", "beta", "gamma", "delta", "theta"};
-color[] COLORS = {#E0FFFF, #FF5733, #F4D03F, #B0A94F, #82E0AA};
+String[] BANDS = {"alpha", "beta", "gamma", "delta", "theta", "EEG"};
+color[] COLORS = {#E0FFFF, #FF5733, #F4D03F, #B0A94F, #82E0AA, #000000};
 int RECT_HEIGHT = 200;
 int RECT_WIDTH = 50;
 
@@ -42,30 +42,32 @@ int[] hsi_precision = new int[4];
 float[] relative = new float[5];
 float[] absolute = new float[5];
 float[] score = new float[5];
+float[] eeg = new float[4];
 boolean headband_on = false;
 boolean has_data = false;
 
 // Audio File
 SoundFile success;
 
-// Visualization
-int rect_x = 0;
-int rect_y = 0;
-int rect_height = 0;
+// Calibration & Detection
+float beta_upper_limit = 0.3; // Calculated by average of of Beta absolute band power during CALIBRATION
+float beta_sum;               // Sum of Beta absolute band power during CALIBRATION state
+int calibration_data_points;         // The number of beta data points collected duirng CALIBRATION state
+int detection_data_points;         // The number of beta data points collected duirng DETECTION state
+int last_reset_time = -1;
+int curr_time;
 
 // State Machine
 int state = IDLE;
 int calm_start_time = -1;
 int calibration_start_time = -1;
-
-// for testing
-float beta_upper_limit = 0.3; // Calculated by average of of Beta absolute band power during calibration
-int time_since_detected = -1;
 int time_since_calibrating = -1;
-float beta_sum;               // Sum of Beta absolute band power during calibration state
-int beta_data_points;         // The number of beta data points collected
-int last_reset_time = -1;
-int curr_time;
+int preparation_start_time = -1;
+
+// Visualization
+int rect_x = 0;
+int rect_height = 0;
+
 
 void setup_Muse_Reader() {
   oscP5 = new OscP5(this, recvPort);
@@ -86,29 +88,35 @@ void draw_Muse_Reader() {
         case 2: // CALIBRATION
             time_since_calibrating =  curr_time - calibration_start_time;
             println("Calibration: ", time_since_calibrating, " seconds;   ");
-            if (time_since_calibrating > 20)
+            if (time_since_calibrating > 20 && calibration_data_points > 50)
                 changeState(PREPARATION);
-            // changeState(DETECTION); // TODO
+            changeState(DETECTION); // TODO
             break;
         case 3: // PREPARATION
-            if (time_since_calibrating > 5) // Wait 5 seconds before starting the detection
+            if (curr_time - preparation_start_time > 5) // Wait 5 seconds before starting the detection
                 changeState(DETECTION);
             break;
         case 4: // DETECTION
-            text(beta_upper_limit, 900,25);
-            if (time_since_detected>0) println(time_since_detected, "   ", beta_upper_limit);
             break;
         default: break;
     }
+            text(beta_upper_limit, 900,25);
+            if (calm_start_time > 0) text(curr_time - calm_start_time, 900,40);
+            text(calibration_data_points, 930, 40);
+            text("#data " + detection_data_points, 900, 55);
 
-    visualizeAbsolute();
-
-    // reset neurons
-    if (curr_time - last_reset_time > 90) {
-        // idleReset();
+    // reset neurons every 1 minute
+    if (state < BCI && curr_time - last_reset_time > 60) {
         resetBrain();
         last_reset_time = curr_time;
     }
+
+    // Visualizations
+    // visualizeData(eeg);
+    if (state == BCI)
+        visualizeData(score);
+    else
+        visualizeData(absolute);
 }
 
 void resetBrain() {
@@ -117,27 +125,30 @@ void resetBrain() {
 }
 
 void changeState(int new_state) {
-    resetBrain();
-
-    if (new_state == CALIBRATION) {
+    if (new_state == IDLE)
+        humBrainLoop.stop();
+    else if (new_state == BCI)
+        rectY = 50;
+    else if (new_state == CALIBRATION) {
+        resetBrain();
         humBrainLoop.loop(1);
         calibration_start_time = curr_time;
     }
 
     else if (new_state == PREPARATION) {
-        calibration_start_time = curr_time;
+        resetBrain();
+        success.play();
+        preparation_start_time = curr_time;
     }
 
     else if (new_state == DETECTION) {
-        success.play();
-        beta_upper_limit = beta_sum / beta_data_points;
+        resetBrain();
+        // Calculate results from calibration
+        beta_upper_limit = beta_sum / calibration_data_points;
         if (beta_upper_limit < 0.1 || Float.isNaN(beta_upper_limit))
             beta_upper_limit = 0.1;
         println("Beta Upper Limit = ", beta_upper_limit, " !!!!!!!!!!!!!!!!!");
     }
-
-    else if (new_state == BCI)
-        rectY = 50;
 
     println("Change to new state: ", state_names[new_state]);
 
@@ -153,7 +164,7 @@ void oscEvent(OscMessage msg) {
     }
 
     getHeadbandStatus(msg);
-
+    // getEEG(msg);
 
     switch (state)
     {
@@ -168,49 +179,54 @@ void oscEvent(OscMessage msg) {
 
         default :
             getAbsolute(msg);
-            get_elements_data(msg, "score", absolute);
+            getScore(msg);
             break;
     }
 }
 
-void visualizeAbsolute() {
+void visualizeData(float[] data_array) {
     // Absolute Graph
-    for (int i = 0; i < NUM_BAND; i++) {
-        rect_x = 50 + i * 100;
+    for (int i = 0; i < data_array.length; i++) {
+        rect_x = 550 + i * 100;
 
         fill(COLORS[i]);
-        rect_height = (int)((absolute[i] * RECT_HEIGHT));
-        rect(rect_x, 420-rect_height, RECT_WIDTH, rect_height); // Draw the rect at y=420
+        rect_height = (int)((data_array[i] * RECT_HEIGHT));
+
+        // Draw the bars at y=700
+        rect(rect_x, 700 - rect_height / 2, RECT_WIDTH, rect_height);
 
         fill(0);
-        text(BANDS[i], rect_x, 420+10);
-        text(String.valueOf((float)absolute[i]), rect_x, 420+22); // Print data
+        text(BANDS[i], rect_x - RECT_WIDTH / 2, 700 + 10);
+        text(String.valueOf((float)data_array[i]), rect_x - RECT_WIDTH / 2, 700 + 22);
     }
 }
 
 void detect_calmness() {
     if (absolute[ALPHA] > absolute[BETA])
     {
+        detection_data_points++;
+
         if (calm_start_time < 0)
             calm_start_time = curr_time; // Reset start_time
 
-        else if (curr_time - calm_start_time > CALM_TIME) { // 'Calm' for 10 seconds
+        else if (curr_time - calm_start_time > CALM_TIME // 'Calm' for 10 seconds
+            && detection_data_points > calibration_data_points / 3 * 2 ) // Enough datapoints were collected before making the switch
+        {
             changeState(BCI);
-        }
-
-        // test
-        else {
-            time_since_detected = curr_time - calm_start_time;
-            // println(minute(), ":", second());
         }
     }
     else {
-        calm_start_time = -1;
+        reset_detection();
     }
 
     if (absolute[BETA] > beta_upper_limit) {
-        calm_start_time = -1;
+        reset_detection();
     }
+}
+
+void reset_detection() {
+    calm_start_time = -1;
+    detection_data_points = 0;
 }
 
 /* Headband Status Information (precision) */
@@ -248,30 +264,33 @@ void getHeadbandStatus(OscMessage msg) {
 
 /* Absolute Band Power */
 void getAbsolute(OscMessage msg) {
-    has_data = muse_monitor(msg, "absolute", absolute);
+    has_data = get_elements_data(msg, "absolute", absolute);
 
-    if (has_data && state == DETECTION)
-        detect_calmness();
-    else if (has_data && state == CALIBRATION && msg.checkAddrPattern(muse_name + "/elements/beta_absolute") && time_since_calibrating > 10)
-    {
-        beta_sum += absolute[BETA];
-        beta_data_points++;
+    if (has_data && msg.checkAddrPattern(muse_name + "/elements/beta_absolute")) {
+        if (state == DETECTION){
+            // detect_calmness(); // TODO
+        }
+        else if (state == CALIBRATION && time_since_calibrating > 10)
+        {
+            beta_sum += absolute[BETA];
+            calibration_data_points++;
+        }
     }
 }
 
 /* Band Power Score */
 void getScore(OscMessage msg) {
-    muse_monitor(msg, "session_score", score);
+    get_elements_data(msg, "session_score", score);
 }
 
 /* Relative Band Power */
 void getRelative(OscMessage msg) {
-    muse_monitor(msg, "relative", relative);
+    get_elements_data(msg, "relative", relative);
 }
 
 boolean get_elements_data(OscMessage msg, String element_name, float[] data_array) {
     // float[] result_data = new float[5];
-    for (int i = 0; i < 5; i++) {
+    for (int i = 0; i < BANDS.length; i++) {
         if (msg.checkAddrPattern(muse_name + "/elements/" + BANDS[i] + "_" + element_name)) {
             float sum = 0;
             for (int j = 0; j < NUM_CHANNEL; j++) {
@@ -293,7 +312,7 @@ boolean get_elements_data(OscMessage msg, String element_name, float[] data_arra
     return true; // sum is a number
 }
 
-boolean muse_monitor(OscMessage msg, String element_name, float[] data_array) {
+boolean get_elements_data_muse_monitor(OscMessage msg, String element_name, float[] data_array) {
     // float[] result_data = new float[5];
     for (int i = 0; i < 5; i++) {
         if (msg.checkAddrPattern(muse_name + "/elements/" + BANDS[i] + "_" + element_name)) {
@@ -310,7 +329,24 @@ boolean muse_monitor(OscMessage msg, String element_name, float[] data_array) {
             break;
         }
     }
-    return true; // sum is a number
+    return true;
+}
+
+/* EEG */
+void getEEG(OscMessage msg){
+    if (msg.checkAddrPattern(muse_name + "/eeg")==true) {
+            // print("\nEEG ");
+            if (msg.checkTypetag("dddddd")) {
+                for (int i=0; i < 4; i++) {
+                    eeg[i] = (float)msg.get(i).doubleValue()/1000;
+                }
+            } else if (msg.checkTypetag("ffffff")) {
+                for (int i=0; i < 4; i++) {
+                    eeg[i] = msg.get(i).floatValue()/1000;
+                }
+            } else
+                print("Type unknown");
+    }
 }
 
 
