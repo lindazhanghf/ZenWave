@@ -352,7 +352,8 @@ class  Neuron {
     xx += (x-xx) / 8.0; // Speed of re-organization of neurons
     yy += (y-yy) / 8.0; // Speed of re-organization of neurons
 
-    randomMovement(); // Uncomment this to enable movement of neural networks
+    if (state < DETECTION)
+      randomMovement(); // Uncomment this to enable movement of neural networks
   }
 
   void randomMovement() {
