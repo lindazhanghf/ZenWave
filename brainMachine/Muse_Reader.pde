@@ -4,7 +4,7 @@
 
 // Debug
 boolean debug = false;
-boolean debugOSC = true;
+boolean debugOSC = false;
 
 // OSC data streamming
 import oscP5.*;
@@ -15,12 +15,15 @@ OscP5 oscP5;
 // MACROS
 boolean MEDITATION_MODE = true; // "true" for mediation, "false" for clam detection mode
 int CALM_TIME = 5;   // How many consecutive seconds of calm time must be detected before entering A.I state
+int MEDITATION_TIME = 60; // Length of the meditation time in seconds, default 60 seconds
 int NUM_CHANNEL = 4;
 int NUM_BAND = 5;
 String[] BANDS = {"alpha", "beta", "gamma", "delta", "theta", "EEG"};
 color[] COLORS = {#E0FFFF, #FF5733, #F4D03F, #B0A94F, #82E0AA, #000000};
 int RECT_HEIGHT = 200;
 int RECT_WIDTH = 50;
+int BASELINE_HEIGHT = 500;
+int DIAGRAM_LEFT_LIMIT = 20;
 
 // Bands
 int ALPHA = 0;
@@ -47,9 +50,10 @@ float[] relative = new float[5];
 float[] absolute = new float[5];
 float[] score = new float[5];
 float[] eeg = new float[4];
+boolean[] good_connection = new boolean[4];
 boolean headband_on = false;
 boolean has_data = false;
-float[] beta = new float[500]; // Collects data during meditation phase
+float[] beta = new float[1000]; // Collects data during meditation phase
 
 // Audio File
 SoundFile calibration_done;
@@ -69,8 +73,11 @@ int time_since_calibrating = -1;
 
 // Visualization
 int last_reset_time = -1;    // Keep track of when the rest brain (position of neurons)
-int rect_x = 0;
 int rect_height = 0;
+int rect_x = 0;
+float diagram_bottom_y = 0;
+float diagram_left = 0;
+boolean randomly_moving = false;
 
 void setup_Muse_Reader() {
   oscP5 = new OscP5(this, recvPort);
@@ -88,21 +95,25 @@ void draw_Muse_Reader() {
     switch (state) {
         case 2: // CALIBRATION
             time_since_calibrating =  curr_time - state_start_time;
-            // println("Calibration: ", time_since_calibrating, " seconds;   ");
             if (time_since_calibrating > 20 && calibration_data_points > 70)
                 changeState(PREPARATION);
-            changeState(PREPARATION); //TODO testing only
+            // changeState(PREPARATION); //TODO testing only
             break;
+
         case 3: // PREPARATION
             if (curr_time - state_start_time > 5) // Wait 5 seconds before starting the detection
                 changeState(MEDITATION_MODE ? MEDITATION : DETECTION);
             break;
+
         case 6: // MEDITATION
-            if (curr_time - state_start_time > 60)
+            if (curr_time - state_start_time > MEDITATION_TIME)
                 changeState(BCI); // TODO MEDITATION_END
             break;
         default: break;
     }
+
+    if ((curr_time - state_start_time) % 5 == 0)
+        randomly_moving = false;
 
     // Testing
     text("State:", 800, 15);
@@ -112,6 +123,9 @@ void draw_Muse_Reader() {
     else text(curr_time - state_start_time, 900,40);
     text(calibration_data_points, 930, 40);
     text("#data " + beta_data_points, 900, 55);
+
+    for (int i = 0; i < 4; i++)
+        text((good_connection[i]?"good":"bad"), 10, 10 + i * 15);
 
     // Draw bar chart
     if (state == BCI) {
@@ -135,11 +149,15 @@ void changeState(int new_state) {
     // Old State
     if (state == CALIBRATION) {
         calibration_done.play();
-        // Calculate results from calibration
+        // Calculate average beta band from calibration
         beta_upper_limit = beta_sum / calibration_data_points;
-        if (beta_upper_limit < 0.1 || Float.isNaN(beta_upper_limit))
-            beta_upper_limit = 0.1;
+        // if (beta_upper_limit < 0.1 || Float.isNaN(beta_upper_limit))
+        //     beta_upper_limit = 0.1;
         println("Beta Upper Limit = ", beta_upper_limit);
+
+        // For visualizing meditation result
+        diagram_bottom_y = BASELINE_HEIGHT + beta_upper_limit * RECT_HEIGHT * 2;
+        println ("rect y = ", diagram_bottom_y);
     }
 
     if (new_state == IDLE) {
@@ -172,6 +190,7 @@ void oscEvent(OscMessage msg) {
         println(msg);
     }
 
+    randomly_moving = true;
     getHeadbandStatus(msg);
     // getEEG(msg);
 
@@ -195,23 +214,48 @@ void oscEvent(OscMessage msg) {
 
 /* Meditation Visualization */
 void visualize_meditation() {
-    float x = 0, y = 0;
-    float _x = x;
-    float _y = 700 - beta[0] * RECT_HEIGHT * 2;
+    float _x = 0, x = 0, y = 0;
+    float _y = Float.NaN;
 
-    background(255);
     fill(0);
-    for (int i = 1; i < beta_data_points; i++) {
-        x = i * 2;
-        y = 700 - beta[i] * RECT_HEIGHT * 2;
+    stroke(0);
+    background(255);
+    for (int i = 0; i < beta_data_points; i++) {
+        x = i + DIAGRAM_LEFT_LIMIT;
 
-        line(_x, _y, x, y);
+        if (Float.isNaN(beta[i]))
+            y = Float.NaN;
+        else
+            y = diagram_bottom_y - beta[i] * RECT_HEIGHT * 2;
+
+        // Only draw this line signment if there's  data
+        if (!Float.isNaN(_y)) {
+            line(_x, _y, x, y);
+        }
         _x = x;
         _y = y;
     }
 
-    fill(COLORS[0]);
-    line(0, 700 - beta_upper_limit * RECT_HEIGHT * 2, beta_data_points * 2, beta_upper_limit * RECT_HEIGHT);
+    stroke(COLORS[0]);
+    line(DIAGRAM_LEFT_LIMIT, BASELINE_HEIGHT, DIAGRAM_LEFT_LIMIT + beta_data_points, BASELINE_HEIGHT);
+
+
+    stroke(0);
+    text(beta_upper_limit, x, BASELINE_HEIGHT);
+    text(beta[beta_data_points-1], x, y);
+    text("0", x, diagram_bottom_y);
+}
+
+void collect_meditation(boolean has_beta_data) {
+    if (beta_data_points >= beta.length) // Data array overflow
+        return;
+
+    if (!has_beta_data)
+        beta[beta_data_points] = Float.NaN;
+    else
+        beta[beta_data_points] = absolute[BETA];
+
+    beta_data_points++;
 }
 
 /* Visualization Bar Chart */
@@ -229,18 +273,6 @@ void visualizeData(float[] data_array) {
         text(BANDS[i], rect_x - RECT_WIDTH / 2, 700 + 10);
         text(String.valueOf((float)data_array[i]), rect_x - RECT_WIDTH / 2, 700 + 22);
     }
-}
-
-void meditation(boolean has_data) {
-    if (beta_data_points >= 1000) // Data array overflow
-        return;
-
-    if (!has_data)
-        beta[beta_data_points] = 0;
-    else
-        beta[beta_data_points] = absolute[BETA];
-
-    beta_data_points++;
 }
 
 void detect_calmness() {
@@ -299,9 +331,24 @@ void getHeadbandStatus(OscMessage msg) {
                 calm_start_time = -1; // Not fitted, restart calm detection
         }
 
-        if (state ==  FITTING && sum_precision == 4) // 4 means all fitted
-            changeState(CALIBRATION);
+        // if (state ==  FITTING && sum_precision == 4) // 4 means all fitted
+        //     changeState(CALIBRATION);
+    }
 
+    // Strict data quality indicator for each channel, 0= bad, 1 = good
+    if (state > IDLE && msg.checkAddrPattern(muse_name + "/elements/is_good"))
+    {
+        boolean is_good = true;
+        for (int i=0; i< NUM_CHANNEL; i++) {
+            good_connection[i] = get_OSC_value(msg, i) == 1; // 1 for true; 0 for false
+            if (good_connection[i] == false) {
+                calm_start_time = -1; // Bad connection, restart calm detection
+                is_good = false;
+            }
+        }
+
+        if (state ==  FITTING && is_good) // 4 means all fitted
+            changeState(CALIBRATION);
     }
 }
 
@@ -310,7 +357,7 @@ void getAbsolute(OscMessage msg) {
     has_data = get_elements_data(msg, "absolute", absolute);
 
     if (state == MEDITATION && msg.checkAddrPattern(muse_name + "/elements/beta_absolute"))
-        meditation(has_data);
+        collect_meditation(has_data);
 
     if (has_data && msg.checkAddrPattern(muse_name + "/elements/beta_absolute")) {
         if (state == DETECTION)

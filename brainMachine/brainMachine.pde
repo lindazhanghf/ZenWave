@@ -33,10 +33,6 @@ float checkGesture = 0;
 int currentFinger;
 int lastFinger;
 
-// Sound Variables
-float adjustAi = 0;
-
-
 // Sketch Width and Height
 int appWidth = 1000;
 int appHeight = 1000;
@@ -128,27 +124,19 @@ void draw() {
     background(255, 11);
   }
 
-  // Music Rate
-  if(abs((rectY / 1080) - 1.50) > 1.51) {
-    adjustAi = 0.2;
-  } else {
-    adjustAi = 0;
+  // if (state == BCI)
+  //   // artBrainLoop.rate(abs(rectY / 1080) - 1.5);
+  //   // artBrainLoop.rate(absolute[ALPHA] + 0.5);
+  //   artBrainLoop.rate(1);
+  // else
+  if (state > CALIBRATION) {
+    // float rate = abs(1-absolute[BETA] - 1.8);
+    float rate = abs(absolute[BETA] + 1 - beta_upper_limit);
+    humBrainLoop.rate(rate);
   }
 
-  // artBrainLoop.rate(abs((rectY / 1080) - 1.50) + adjustAi);
-  // humBrainLoop.rate(abs((rectY / 1080) - 1.50));
-
-  artBrainLoop.rate(abs((rectY / 1080) - 1.50) + adjustAi);
-  if (state > CALIBRATION)
-    humBrainLoop.rate(abs(1-absolute[BETA] - 1.8));
-
-
-  // Color Changer
-  // xColor = (abs((rectX / 20) + 12)) * 2;
-  // yIntensity = abs((((rectY + 20) / 3) - 425) / 2);
 
   pushMatrix();
-
   scale(1);
 
   for(int i = 0;i<n.length;i++) {
@@ -164,19 +152,6 @@ void draw() {
 
   ////////////////////////////////////////////////////////
 
-
-  // checkGesture += 0.5;
-
-  // if (checkGesture % 0.5 == 0 && changeGesture == true || checkGesture % 1 == 0 && idleChange == true){
-  //  changeGesture = false;
-  //  idleChange = false;
-  // } else if(wait == true && checkGesture % 41 == 0) {
-  //  wait = false;
-  // } else if(checkGesture % 691 == 0 && fingers < 1 && strength <= 0) {
-  //  idleChange = true;
-  // }
-
-  // idleReset();
   draw_Muse_Reader();
 }
 
@@ -305,31 +280,32 @@ class  Neuron {
   }
 
   void drawSignal () {
-    // println("\n", sig.length, " signals ");  //print
 
     if(sig.length > 0) {
       for(int i = 0; i < sig.length; i++) {
-        // print(" ", i); //print
-        if(sig[i] != null && sig[i].running) {
-          pushStyle();
-          // print("_"); //print
+        if(sig[i].running) {
+          try {
+            pushStyle();
+            // print("_"); //debug
 
-          if(is_human_brain()) {
-            strokeWeight(1); // Size of Synapse
-            stroke(255, 153, 51, 70); // Color of synape
-          } else {
-            strokeWeight(1.5); // Size of Synapse
-            stroke(255, 0, 102, 80); // Color of synape
-          }
+            if(is_human_brain()) {
+              strokeWeight(1); // Size of Synapse
+              stroke(255, 153, 51, 70); // Color of synape
+            } else {
+              strokeWeight(1.5); // Size of Synapse
+              stroke(255, 0, 102, 80); // Color of synape
+            }
 
-          noFill();
-          // print(sig[i].x, "|", sig[i].lx); //print
-          line(sig[i].x, sig[i].y, sig[i].lx, sig[i].ly);
-          popStyle();
-
-          if (sig[i] != null)
+            noFill();
+            // print(sig[i].x, "|", sig[i].lx); //debug
+            line(sig[i].x, sig[i].y, sig[i].lx, sig[i].ly);
+            popStyle();
             sig[i].step();
-          // print("✓ "); //print
+            // print("✓ "); //debug
+          } catch (ArrayIndexOutOfBoundsException e) {
+            print("BREAKS!", sig.length, " signals ");  //debug
+            println(" ", i); //debug
+          }
         }
       }
     }
@@ -348,7 +324,8 @@ class  Neuron {
     xx += (x-xx) / 8.0; // Speed of re-organization of neurons
     yy += (y-yy) / 8.0; // Speed of re-organization of neurons
 
-    if (state < DETECTION)
+    // if (state < DETECTION)
+    if (randomly_moving)
       randomMovement(); // Uncomment this to enable movement of neural networks
   }
 
@@ -470,7 +447,7 @@ class Signal {
         }
 
         // deadnum += (int)random(-1,1);
-        //println("run "+base.A+" : "+base.B);
+        // println("run "+base.A+" : "+base.B);
 
         running = false;
         for(int i = 0; i < n[base.B].s.length;i++) {
