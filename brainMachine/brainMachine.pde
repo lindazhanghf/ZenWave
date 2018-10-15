@@ -261,28 +261,28 @@ class  Neuron {
     switch (find_brain_sections(x, y)) {
       case 3:
         band = ALPHA;
-        if (hsi_precision[3] > 0 && hsi_precision[3] < 2)
+        if (hsi_precision[3] > 0 && hsi_precision[3] < 4)
           stroke(0 + (24 * 2), 255 + (24 * 2), 180 - (24 * 2), score[band] * 80 + 20);
         else
           stroke(150, score[band] * 80 + 20);
         break;
       case 2:
         band = BETA;
-        if (hsi_precision[2] > 0 && hsi_precision[2] < 2)
+        if (hsi_precision[2] > 0 && hsi_precision[2] < 4)
           stroke(242, 242 - (24 / 2), 13 + 24, score[band] * 80 + 20);
         else
           stroke(150, score[band] * 80 + 20);
         break;
       case 1:
         band = GAMMA;
-        if (hsi_precision[1] > 0 && hsi_precision[1] < 2)
+        if (hsi_precision[1] > 0 && hsi_precision[1] < 4)
           stroke(255 , 159 - (125 / 3), 102 - 125, score[band] * 80 + 20);
         else
           stroke(150, score[band] * 80 + 20);
         break;
       case 0:
         band = DELTA;
-        if (hsi_precision[0] > 0 && hsi_precision[0] < 2)
+        if (hsi_precision[0] > 0 && hsi_precision[0] < 4)
           stroke(255,51,51 + (125 * 1.5),score[band] * 80 + 20);
         else
           stroke(150, score[band] * 80 + 20);
@@ -316,23 +316,19 @@ class  Neuron {
 
           if(is_human_brain()) {
             strokeWeight(1); // Size of Synapse
-          } else {
-            strokeWeight(1.5); // Size of Synapse
-          }
-
-          if(is_human_brain()) {
             stroke(255, 153, 51, 70); // Color of synape
           } else {
+            strokeWeight(1.5); // Size of Synapse
             stroke(255, 0, 102, 80); // Color of synape
           }
-
 
           noFill();
           // print(sig[i].x, "|", sig[i].lx); //print
           line(sig[i].x, sig[i].y, sig[i].lx, sig[i].ly);
           popStyle();
 
-          sig[i].step();
+          if (sig[i] != null)
+            sig[i].step();
           // print("✓ "); //print
         }
       }
@@ -444,22 +440,22 @@ class Signal {
           noFill();
           noStroke();
 
-          if ((fingers == 0)
-            && (x > 635 || x > 500 && y < 405)) {
-              fill_in_explosion();
-          } if ((fingers == 1)
-            && (x > 250 && x <= 500 && y < 420 || x > 10 && x <= 260 && y < 322)) {
-              fill_in_explosion();
-          } if ((fingers == 2)
-            && (x > 10 && x < 260 && y > 270 && y < 570 || x > 240 && x < 330 && y < 560)) {
-              fill_in_explosion();
-          } if ((fingers == 3)
-            && (x > 90 && x < 500 && y > 560)) {
-              fill_in_explosion();
-          } if ((fingers == 4)
-            && (x > 302 && x < 638 && y > 389 && y < 554 || x > 480 && x < 680 && y > 555)) {
-              fill_in_explosion();
-          }
+          // if ((fingers == 0)
+          //   && (x > 635 || x > 500 && y < 405)) {
+          //     fill_in_explosion();
+          // } if ((fingers == 1)
+          //   && (x > 250 && x <= 500 && y < 420 || x > 10 && x <= 260 && y < 322)) {
+          //     fill_in_explosion();
+          // } if ((fingers == 2)
+          //   && (x > 10 && x < 260 && y > 270 && y < 570 || x > 240 && x < 330 && y < 560)) {
+          //     fill_in_explosion();
+          // } if ((fingers == 3)
+          //   && (x > 90 && x < 500 && y > 560)) {
+          //     fill_in_explosion();
+          // } if ((fingers == 4)
+          //   && (x > 302 && x < 638 && y > 389 && y < 554 || x > 480 && x < 680 && y > 555)) {
+          //     fill_in_explosion();
+          // }
 
           if (fingers >= 5) {
             fill_in_explosion();
@@ -469,7 +465,7 @@ class Signal {
 
           // Position & Size of explosion
           // ellipse(x, y, (abs((rectY / 300) - 4)) * i, (abs((rectY / 300) - 4)) * i);
-          ellipse(x, y, (abs((absolute[ALPHA] * 3))) * i, (abs((absolute[ALPHA] * 3))) * i);
+          ellipse(x, y, (abs((absolute[BETA] * 6))) * i, (abs((absolute[BETA] * 6))) * i);
           popStyle();
         }
 

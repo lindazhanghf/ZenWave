@@ -2,20 +2,18 @@
 
 //////////////////////////////////////////////////////
 
-// OSC Library
-import oscP5.*;
-
 // Debug
 boolean debug = false;
-boolean debugOSC = false;
+boolean debugOSC = true;
 
 // OSC data streamming
+import oscP5.*;
 String muse_name = "muse"; // "muse" default setting; "/muse" if via Muse Monitor app
 int recvPort = 8980;
 OscP5 oscP5;
 
 // MACROS
-boolean MEDITATION_MODE = false;
+boolean MEDITATION_MODE = true; // "true" for mediation, "false" for clam detection mode
 int CALM_TIME = 5;   // How many consecutive seconds of calm time must be detected before entering A.I state
 int NUM_CHANNEL = 4;
 int NUM_BAND = 5;
@@ -93,7 +91,7 @@ void draw_Muse_Reader() {
             // println("Calibration: ", time_since_calibrating, " seconds;   ");
             if (time_since_calibrating > 20 && calibration_data_points > 70)
                 changeState(PREPARATION);
-            // changeState(BCI); //TODO
+            changeState(PREPARATION); //TODO testing only
             break;
         case 3: // PREPARATION
             if (curr_time - state_start_time > 5) // Wait 5 seconds before starting the detection
@@ -117,13 +115,14 @@ void draw_Muse_Reader() {
 
     // Draw bar chart
     if (state == BCI) {
-        // visualizeData(score);
         if (MEDITATION_MODE)
             visualize_meditation();
+        else
+            visualizeData(score);
     }
     else
         visualizeData(absolute);
-    // visualizeData(eeg);
+        // visualizeData(eeg);
 }
 
 void resetBrain() { // DEBUG
@@ -140,25 +139,25 @@ void changeState(int new_state) {
         beta_upper_limit = beta_sum / calibration_data_points;
         if (beta_upper_limit < 0.1 || Float.isNaN(beta_upper_limit))
             beta_upper_limit = 0.1;
-        println("Beta Upper Limit = ", beta_upper_limit, " !!!!!!!!!!!!!!!!!");
+        println("Beta Upper Limit = ", beta_upper_limit);
     }
 
     if (new_state == IDLE) {
+        resetBrain();
+        artBrainLoop.stop();
         humBrainLoop.stop();
         rectY = 200;
     }
     else if (new_state == BCI) {
+        humBrainLoop.stop();
+        artBrainLoop.loop(1);
         rectY = 50;
     }
     else if (new_state == CALIBRATION) {
-        // resetBrain();
         humBrainLoop.loop(1);
     }
     else if (new_state == PREPARATION) {
         resetBrain();
-    }
-    else if (new_state == DETECTION) {
-        // resetBrain();
     }
 
     println("Change to new state: ", state_names[new_state]);
@@ -168,7 +167,6 @@ void changeState(int new_state) {
 
 
 void oscEvent(OscMessage msg) {
-    /* print the address path and the type string of the received OscMessage */
     if (debugOSC) {
         print("---OSC Message---");
         println(msg);
@@ -197,14 +195,15 @@ void oscEvent(OscMessage msg) {
 
 /* Meditation Visualization */
 void visualize_meditation() {
-    float x = 0, y = 0, _x = 0;
-    float _y = beta[0] * RECT_HEIGHT;
+    float x = 0, y = 0;
+    float _x = x;
+    float _y = 700 - beta[0] * RECT_HEIGHT * 2;
 
     background(255);
     fill(0);
     for (int i = 1; i < beta_data_points; i++) {
         x = i * 2;
-        y = beta[i] * RECT_HEIGHT;
+        y = 700 - beta[i] * RECT_HEIGHT * 2;
 
         line(_x, _y, x, y);
         _x = x;
@@ -212,7 +211,7 @@ void visualize_meditation() {
     }
 
     fill(COLORS[0]);
-    line(0, beta_upper_limit * RECT_HEIGHT, beta_data_points * 2, beta_upper_limit * RECT_HEIGHT);
+    line(0, 700 - beta_upper_limit * RECT_HEIGHT * 2, beta_data_points * 2, beta_upper_limit * RECT_HEIGHT);
 }
 
 /* Visualization Bar Chart */
@@ -273,13 +272,13 @@ void reset_detection() {
     beta_data_points = 0;
 }
 
-/* Headband Status Information (precision) */
+/* Headband Status Information (fitting precision) */
 void getHeadbandStatus(OscMessage msg) {
     if (msg.checkAddrPattern(muse_name + "/elements/touching_forehead")
         && (msg.checkTypetag("i")))
     {
         // debugPrint("Touching forehead? " + String.valueOf(msg.get(0).intValue()) + "\n");
-        if (msg.checkTypetag("i") && msg.get(0).intValue() == 1) {
+        if (msg.get(0).intValue() == 1) {
             headband_on = true;
             if (state == IDLE)
                 changeState(FITTING);
@@ -290,17 +289,17 @@ void getHeadbandStatus(OscMessage msg) {
         }
     }
 
-    if (state > IDLE && msg.checkAddrPattern(muse_name + "/elements/horseshoe")==true)
+    if (state > IDLE && msg.checkAddrPattern(muse_name + "/elements/horseshoe"))
     {
-        int sum_precision = 0; // 4 means all fitted
+        int sum_precision = 0;
         for (int i=0; i< NUM_CHANNEL; i++) {
             hsi_precision[i] = (int)get_OSC_value(msg, i);
             sum_precision += hsi_precision[i];
             if (hsi_precision[i] > 2)
-                calm_start_time = -1;                   // Not fitted, restart calm detection
+                calm_start_time = -1; // Not fitted, restart calm detection
         }
 
-        if (state ==  FITTING && sum_precision == 4)
+        if (state ==  FITTING && sum_precision == 4) // 4 means all fitted
             changeState(CALIBRATION);
 
     }
@@ -320,7 +319,6 @@ void getAbsolute(OscMessage msg) {
         {
             beta_sum += absolute[BETA];
             calibration_data_points++;
-            // println(absolute[BETA]);
         }
     }
 }
@@ -335,15 +333,14 @@ void getRelative(OscMessage msg) {
     get_elements_data(msg, "relative", relative);
 }
 
+/* Get OSC data within the "elements" category */
 boolean get_elements_data(OscMessage msg, String element_name, float[] data_array) {
-    // float[] result_data = new float[5];
     for (int i = 0; i < BANDS.length; i++) {
         if (msg.checkAddrPattern(muse_name + "/elements/" + BANDS[i] + "_" + element_name)) {
             float sum = 0;
             for (int j = 0; j < NUM_CHANNEL; j++) {
                 sum += get_OSC_value(msg, j);
             }
-            // debugPrint("  " + BANDS[i] + "=" + String.valueOf(sum) + "\n");
             sum = sum/4;
 
             if (!Float.isNaN(sum) && sum != data_array[i]) {
@@ -361,7 +358,6 @@ boolean get_elements_data(OscMessage msg, String element_name, float[] data_arra
 }
 
 boolean get_elements_data_muse_monitor(OscMessage msg, String element_name, float[] data_array) {
-    // float[] result_data = new float[5];
     for (int i = 0; i < 5; i++) {
         if (msg.checkAddrPattern(muse_name + "/elements/" + BANDS[i] + "_" + element_name)) {
             data_array[i] = msg.get(0).floatValue();
@@ -374,8 +370,7 @@ boolean get_elements_data_muse_monitor(OscMessage msg, String element_name, floa
 
 /* EEG */
 void getEEG(OscMessage msg){
-    if (msg.checkAddrPattern(muse_name + "/eeg")==true) {
-            // print("\nEEG ");
+    if (msg.checkAddrPattern(muse_name + "/eeg")) {
             if (msg.checkTypetag("dddddd")) {
                 for (int i=0; i < 4; i++) {
                     eeg[i] = (float)msg.get(i).doubleValue()/1000;
@@ -392,7 +387,7 @@ void getEEG(OscMessage msg){
 
 /* Blink */
 void getBlink(OscMessage msg) {
-    if (msg.checkAddrPattern(muse_name + "/elements/blink")==true) {
+    if (msg.checkAddrPattern(muse_name + "/elements/blink")) {
         print("\nBlink ");
         if (msg.checkTypetag("i")) {
             print(msg.get(0).intValue());
@@ -405,7 +400,7 @@ int current_time() {
     return (hour() * 60 + minute()) * 60 + second();
 }
 
-// get float value from "ffff" or "dddd" type OSC data
+/* get float value from "ffff" or double value from "dddd" OSC data */
 float get_OSC_value(OscMessage msg, int index) {
     if (msg.checkTypetag("ffff"))
         return msg.get(index).floatValue();

@@ -15,8 +15,8 @@ void resetNeurons() {
 
     currentState += 1;
     println("currentState:", currentState);
-    humBrainLoop.loop(1);
-    artBrainLoop.stop();
+    // humBrainLoop.loop(1);
+    // artBrainLoop.stop();
 
     for(int i = 0; i < n.length; i++) { // Sections of Brain
 
@@ -82,8 +82,8 @@ void resetNeurons() {
 
     currentState += 1;
     println("currentState:", currentState);
-    artBrainLoop.loop(2);
-    humBrainLoop.stop();
+    // artBrainLoop.loop(2);
+    // humBrainLoop.stop();
 
     aiBrainX = 50;
     aiBrainY = 100;
