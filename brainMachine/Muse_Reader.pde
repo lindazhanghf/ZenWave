@@ -4,7 +4,7 @@
 
 // Debug
 boolean debug = false;
-boolean debugOSC = false;
+boolean debugOSC = true;
 
 // OSC data streamming
 import oscP5.*;
@@ -13,17 +13,17 @@ int recvPort = 8980;
 OscP5 oscP5;
 
 // MACROS
-boolean MEDITATION_MODE = true; // "true" for mediation, "false" for clam detection mode
-int CALM_TIME = 5;   // How many consecutive seconds of calm time must be detected before entering A.I state
-int MEDITATION_TIME = 60; // Length of the meditation time in seconds, default 60 seconds
-int NUM_CHANNEL = 4;
-int NUM_BAND = 5;
-String[] BANDS = {"alpha", "beta", "gamma", "delta", "theta", "EEG"};
-color[] COLORS = {#E0FFFF, #FF5733, #F4D03F, #B0A94F, #82E0AA, #000000};
-int RECT_HEIGHT = 200;
-int RECT_WIDTH = 50;
-int BASELINE_HEIGHT = 500;
-int DIAGRAM_LEFT_LIMIT = 20;
+final static boolean MEDITATION_MODE = true; // "true" for mediation, "false" for clam detection mode
+final static int CALM_TIME = 5;   // How many consecutive seconds of calm time must be detected before entering A.I state
+final static int MEDITATION_TIME = 60; // Length of the meditation time in seconds, default 60 seconds
+final static int NUM_CHANNEL = 4;
+final static int NUM_BAND = 5;
+final static String[] BANDS = {"alpha", "beta", "gamma", "delta", "theta", "EEG"};
+final static color[] COLORS = {#E0FFFF, #FF5733, #F4D03F, #B0A94F, #82E0AA, #000000};
+final static int RECT_HEIGHT = 200;
+final static int RECT_WIDTH = 50;
+final static int BASELINE_HEIGHT = 500;
+final static int DIAGRAM_LEFT_LIMIT = 40;
 
 // Bands
 int ALPHA = 0;
@@ -33,11 +33,11 @@ int DELTA = 3;
 int THETA = 4;
 
 // States
-String[] state_names = {"IDLE", "FITTING", "CALIBRATION", "PREPARATION", "DETECTION", "BCI", "MEDITATION", "MEDITATION_END"};
+String[] state_names = {"IDLE", "FITTING", "CALIBRATION", "EXPLAINATION", "DETECTION", "BCI", "MEDITATION", "MEDITATION_END"};
 int IDLE = 0;           // Headband not on
 int FITTING = 1;        // Adjusting the headband until fitted
 int CALIBRATION = 2;    // 15 seconds of calibration
-int PREPARATION = 3;    // Wait for 10 seconds
+int EXPLAINATION = 3;    // Wait for 10 seconds
 int DETECTION = 4;      // Detecting 10 seconds of continuous 'calm'
 int BCI = 5;            // Final state after "flipped"
 
@@ -51,9 +51,11 @@ float[] absolute = new float[5];
 float[] score = new float[5];
 float[] eeg = new float[4];
 boolean[] good_connection = new boolean[4];
+int is_good;
 boolean headband_on = false;
 boolean has_data = false;
 float[] beta = new float[1000]; // Collects data during meditation phase
+int[] good = new int[1000]; // TESTING ONLY! TODO
 
 // Audio File
 SoundFile calibration_done;
@@ -96,12 +98,12 @@ void draw_Muse_Reader() {
         case 2: // CALIBRATION
             time_since_calibrating =  curr_time - state_start_time;
             if (time_since_calibrating > 20 && calibration_data_points > 70)
-                changeState(PREPARATION);
-            // changeState(PREPARATION); //TODO testing only
+                changeState(EXPLAINATION);
+            // changeState(EXPLAINATION); //TODO testing only
             break;
 
-        case 3: // PREPARATION
-            if (curr_time - state_start_time > 5) // Wait 5 seconds before starting the detection
+        case 3: // EXPLAINATION
+            if (curr_time - state_start_time > 60) // Wait 60 seconds before starting the detection
                 changeState(MEDITATION_MODE ? MEDITATION : DETECTION);
             break;
 
@@ -174,7 +176,7 @@ void changeState(int new_state) {
     else if (new_state == CALIBRATION) {
         humBrainLoop.loop(1);
     }
-    else if (new_state == PREPARATION) {
+    else if (new_state == EXPLAINATION) {
         resetBrain();
     }
 
@@ -236,22 +238,34 @@ void visualize_meditation() {
         _y = y;
     }
 
-    stroke(COLORS[0]);
     line(DIAGRAM_LEFT_LIMIT, BASELINE_HEIGHT, DIAGRAM_LEFT_LIMIT + beta_data_points, BASELINE_HEIGHT);
 
-
     stroke(0);
-    text(beta_upper_limit, x, BASELINE_HEIGHT);
+    text("____" + String.valueOf(beta_upper_limit), x, BASELINE_HEIGHT);
     text(beta[beta_data_points-1], x, y);
     text("0", x, diagram_bottom_y);
+
+    stroke(COLORS[0]);
+    fill(COLORS[0]);
+    x = 0;
+    y = 0;
+    for (int i = 0; i < beta_data_points; i++) {
+        x = i + DIAGRAM_LEFT_LIMIT;
+        y = diagram_bottom_y - good[i] * 100;
+        ellipse(x, y, 5, 5);
+    }
+
 }
 
 void collect_meditation(boolean has_beta_data) {
     if (beta_data_points >= beta.length) // Data array overflow
         return;
+    good[beta_data_points] = is_good;
 
     if (!has_beta_data)
         beta[beta_data_points] = Float.NaN;
+    else if (is_good <= 2)
+        beta[beta_data_points] = beta[beta_data_points-1]; // Use previous val
     else
         beta[beta_data_points] = absolute[BETA];
 
@@ -335,19 +349,17 @@ void getHeadbandStatus(OscMessage msg) {
         //     changeState(CALIBRATION);
     }
 
-    // Strict data quality indicator for each channel, 0= bad, 1 = good
+    // Strict data quality indicator for each channel, 0 = bad, 1 = good
     if (state > IDLE && msg.checkAddrPattern(muse_name + "/elements/is_good"))
     {
-        boolean is_good = true;
+        is_good = 0;
         for (int i=0; i< NUM_CHANNEL; i++) {
-            good_connection[i] = get_OSC_value(msg, i) == 1; // 1 for true; 0 for false
-            if (good_connection[i] == false) {
-                calm_start_time = -1; // Bad connection, restart calm detection
-                is_good = false;
-            }
+            good_connection[i] = get_OSC_value(msg, i) == 1;
+            if (get_OSC_value(msg, i) == 1)
+                is_good++;
         }
 
-        if (state ==  FITTING && is_good) // 4 means all fitted
+        if (state ==  FITTING && is_good == 4) // 4 means all fitted
             changeState(CALIBRATION);
     }
 }
@@ -362,7 +374,7 @@ void getAbsolute(OscMessage msg) {
     if (has_data && msg.checkAddrPattern(muse_name + "/elements/beta_absolute")) {
         if (state == DETECTION)
             detect_calmness();
-        else if (state == CALIBRATION && time_since_calibrating > 10)
+        else if (state == CALIBRATION && time_since_calibrating > 10 && is_good > 2)
         {
             beta_sum += absolute[BETA];
             calibration_data_points++;
@@ -382,6 +394,9 @@ void getRelative(OscMessage msg) {
 
 /* Get OSC data within the "elements" category */
 boolean get_elements_data(OscMessage msg, String element_name, float[] data_array) {
+    if (is_good < 2) // Bad connection
+        return false;
+
     for (int i = 0; i < BANDS.length; i++) {
         if (msg.checkAddrPattern(muse_name + "/elements/" + BANDS[i] + "_" + element_name)) {
             float sum = 0;

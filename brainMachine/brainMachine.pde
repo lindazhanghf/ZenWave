@@ -12,6 +12,9 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ConcurrentHashMap;
 
+import codeanticode.syphon.*;
+SyphonServer server;
+
 // Leap Motion Variables
 int currentState = 1;
 boolean wait = false;
@@ -19,11 +22,9 @@ boolean wait = false;
 // Project Variables
 boolean rightHandCheck; // Check if hand is right or left
 float handSphereRadius;
-int fingers = 0; // Number of Fingers being displayed
-float strength; // Grabbing strength
+int fingers = 0;        // Number of Fingers being displayed
+float strength;         // Grabbing strength
 float rectY;
-// float xColor;
-// float yIntensity;
 float[] colors = new float[5];
 
 // Gesture triggers
@@ -54,9 +55,15 @@ SoundFile humBrainLoop;
 
 //////////////////////////////////////////////////////
 
-void setup() {
+void settings() {
+  size(1000,1000, P2D);
+  PJOGL.profile=1;
+}
 
-  size(1000,900,P2D);
+void setup() {
+  //Syphon Server Setup (for projection)
+  server = new SyphonServer(this, "Processing Syphon");
+  // size(1000,900,P2D);
 
 // Images Setup
   brainCore = loadImage("brainMask.png");
@@ -113,10 +120,6 @@ void setup() {
 ////////////////////////////////////////////////////////
 
 void draw() {
-  // Testing
-  // rectX = mouseX;
-  // rectY = mouseY;
-
   // Background
   if(is_human_brain()) {
     background(4, 71, 88, 11);
@@ -152,6 +155,7 @@ void draw() {
 
   ////////////////////////////////////////////////////////
 
+  server.sendScreen(); // Sending screen to SythonServer
   draw_Muse_Reader();
 }
 
@@ -232,38 +236,38 @@ class  Neuron {
   void
 
   drawSynapse() {
-    int band;
+    int band = BETA; // Only visualize the Beta band
     switch (find_brain_sections(x, y)) {
       case 3:
-        band = ALPHA;
+        // band = ALPHA;
         if (hsi_precision[3] > 0 && hsi_precision[3] < 4)
           stroke(0 + (24 * 2), 255 + (24 * 2), 180 - (24 * 2), score[band] * 80 + 20);
         else
           stroke(150, score[band] * 80 + 20);
         break;
       case 2:
-        band = BETA;
+        // band = BETA;
         if (hsi_precision[2] > 0 && hsi_precision[2] < 4)
           stroke(242, 242 - (24 / 2), 13 + 24, score[band] * 80 + 20);
         else
           stroke(150, score[band] * 80 + 20);
         break;
       case 1:
-        band = GAMMA;
+        // band = GAMMA;
         if (hsi_precision[1] > 0 && hsi_precision[1] < 4)
           stroke(255 , 159 - (125 / 3), 102 - 125, score[band] * 80 + 20);
         else
           stroke(150, score[band] * 80 + 20);
         break;
       case 0:
-        band = DELTA;
+        // band = DELTA;
         if (hsi_precision[0] > 0 && hsi_precision[0] < 4)
           stroke(255,51,51 + (125 * 1.5),score[band] * 80 + 20);
         else
           stroke(150, score[band] * 80 + 20);
         break;
       default : // case 4
-        band = THETA;
+        // band = THETA;
         if (headband_on)
           stroke(255, 128 - (125 / 2),0,score[band] * 80 + 20);
         else
@@ -325,7 +329,7 @@ class  Neuron {
     yy += (y-yy) / 8.0; // Speed of re-organization of neurons
 
     // if (state < DETECTION)
-    if (randomly_moving)
+    if (randomly_moving && state < FITTING)
       randomMovement(); // Uncomment this to enable movement of neural networks
   }
 
@@ -417,23 +421,6 @@ class Signal {
           noFill();
           noStroke();
 
-          // if ((fingers == 0)
-          //   && (x > 635 || x > 500 && y < 405)) {
-          //     fill_in_explosion();
-          // } if ((fingers == 1)
-          //   && (x > 250 && x <= 500 && y < 420 || x > 10 && x <= 260 && y < 322)) {
-          //     fill_in_explosion();
-          // } if ((fingers == 2)
-          //   && (x > 10 && x < 260 && y > 270 && y < 570 || x > 240 && x < 330 && y < 560)) {
-          //     fill_in_explosion();
-          // } if ((fingers == 3)
-          //   && (x > 90 && x < 500 && y > 560)) {
-          //     fill_in_explosion();
-          // } if ((fingers == 4)
-          //   && (x > 302 && x < 638 && y > 389 && y < 554 || x > 480 && x < 680 && y > 555)) {
-          //     fill_in_explosion();
-          // }
-
           if (fingers >= 5) {
             fill_in_explosion();
           }
@@ -442,7 +429,7 @@ class Signal {
 
           // Position & Size of explosion
           // ellipse(x, y, (abs((rectY / 300) - 4)) * i, (abs((rectY / 300) - 4)) * i);
-          ellipse(x, y, (abs((absolute[BETA] * 6))) * i, (abs((absolute[BETA] * 6))) * i);
+          ellipse(x, y, (abs((absolute[BETA] + 0.3 - beta_upper_limit) * 6)) * i, (abs((absolute[BETA] + 0.3 - beta_upper_limit) * 6)) * i);
           popStyle();
         }
 
