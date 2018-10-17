@@ -2,15 +2,17 @@
 
 //////////////////////////////////////////////////////
 
+final static boolean is_projecting = false;
+
 // Debug
-boolean debug = false;
-boolean debugOSC = true;
+final static boolean debug = false;
+final static boolean debugOSC = false;
 
 // OSC data streamming
 import oscP5.*;
-String muse_name = "muse"; // "muse" default setting; "/muse" if via Muse Monitor app
-int recvPort = 8980;
 OscP5 oscP5;
+final static String muse_name = "muse"; // "muse" default setting, "/muse" if via Muse Monitor app
+final static int recvPort = 8980;
 
 // MACROS
 final static boolean MEDITATION_MODE = true; // "true" for mediation, "false" for clam detection mode
@@ -26,23 +28,26 @@ final static int BASELINE_HEIGHT = 500;
 final static int DIAGRAM_LEFT_LIMIT = 40;
 
 // Bands
-int ALPHA = 0;
-int BETA = 1;
-int GAMMA = 2;
-int DELTA = 3;
-int THETA = 4;
+final static int ALPHA = 0;
+final static int BETA = 1;
+final static int GAMMA = 2;
+final static int DELTA = 3;
+final static int THETA = 4;
 
 // States
-String[] state_names = {"IDLE", "FITTING", "CALIBRATION", "EXPLAINATION", "DETECTION", "BCI", "MEDITATION", "MEDITATION_END"};
-int IDLE = 0;           // Headband not on
-int FITTING = 1;        // Adjusting the headband until fitted
-int CALIBRATION = 2;    // 15 seconds of calibration
-int EXPLAINATION = 3;    // Wait for 10 seconds
-int DETECTION = 4;      // Detecting 10 seconds of continuous 'calm'
-int BCI = 5;            // Final state after "flipped"
+final static String[] STATES = {"IDLE", "FITTING", "CALIBRATION", "EXPLAINATION", "DETECTION", "BCI", "MEDITATION", "MEDITATION_END"};
+final static int IDLE = 0;           // Headband not on
+final static int FITTING = 1;        // Adjusting the headband until fitted
+final static int CALIBRATION = 2;    // 15 seconds of calibration
+final static int EXPLAINATION = 3;    // Wait for 10 seconds
+final static int DETECTION = 4;      // Detecting 10 seconds of continuous 'calm'
+final static int BCI = 5;            // Final state after "flipped"
 
-int MEDITATION = 6;    // IF Meditation Mode
-int MEDITATION_END = 7;
+final static int MEDITATION = 6;    // IF Meditation Mode
+final static int MEDITATION_END = 7;
+
+// Audio File
+SoundFile calibration_done;
 
 // Data
 int[] hsi_precision = new int[4];
@@ -56,9 +61,6 @@ boolean headband_on = false;
 boolean has_data = false;
 float[] beta = new float[1000]; // Collects data during meditation phase
 int[] good = new int[1000]; // TESTING ONLY! TODO
-
-// Audio File
-SoundFile calibration_done;
 
 // Calibration & Detection
 float beta_upper_limit = 0.3; // Calculated by average of of Beta absolute band power during CALIBRATION state
@@ -99,11 +101,12 @@ void draw_Muse_Reader() {
             time_since_calibrating =  curr_time - state_start_time;
             if (time_since_calibrating > 20 && calibration_data_points > 70)
                 changeState(EXPLAINATION);
-            // changeState(EXPLAINATION); //TODO testing only
+            changeState(EXPLAINATION); //TODO testing only
             break;
 
         case 3: // EXPLAINATION
-            if (curr_time - state_start_time > 60) // Wait 60 seconds before starting the detection
+            if ((curr_time - state_start_time > 60) // Wait 60 seconds before starting the detection
+                || (keyPressed && key == ENTER))    // Or if "ENTER" was pressed
                 changeState(MEDITATION_MODE ? MEDITATION : DETECTION);
             break;
 
@@ -119,10 +122,12 @@ void draw_Muse_Reader() {
 
     // Testing
     text("State:", 800, 15);
-    text(state_names[state], 900, 15);
-    text(beta_upper_limit, 900,25);
+    text(STATES[state], 900, 15);
+
     if (calm_start_time > 0) text(curr_time - calm_start_time, 900,40);
     else text(curr_time - state_start_time, 900,40);
+    text(beta_upper_limit, 900,25);
+
     text(calibration_data_points, 930, 40);
     text("#data " + beta_data_points, 900, 55);
 
@@ -131,7 +136,7 @@ void draw_Muse_Reader() {
 
     // Draw bar chart
     if (state == BCI) {
-        if (MEDITATION_MODE)
+        if (MEDITATION_MODE && !is_projecting)
             visualize_meditation();
         else
             visualizeData(score);
@@ -153,8 +158,8 @@ void changeState(int new_state) {
         calibration_done.play();
         // Calculate average beta band from calibration
         beta_upper_limit = beta_sum / calibration_data_points;
-        // if (beta_upper_limit < 0.1 || Float.isNaN(beta_upper_limit))
-        //     beta_upper_limit = 0.1;
+        if (Float.isNaN(beta_upper_limit)) // || beta_upper_limit < 0.1
+            beta_upper_limit = 0.1;
         println("Beta Upper Limit = ", beta_upper_limit);
 
         // For visualizing meditation result
@@ -180,7 +185,7 @@ void changeState(int new_state) {
         resetBrain();
     }
 
-    println("Change to new state: ", state_names[new_state]);
+    println("Change to new state: ", STATES[new_state]);
     state = new_state;
     state_start_time = curr_time;
 }
@@ -277,15 +282,18 @@ void visualizeData(float[] data_array) {
     for (int i = 0; i < data_array.length; i++) {
         rect_x = 550 + i * 100;
 
-        fill(COLORS[i]);
-        rect_height = (int)((data_array[i] * RECT_HEIGHT));
-
-        // Draw the bars at y=700
-        rect(rect_x, 700 - rect_height / 2, RECT_WIDTH, rect_height);
-
+        // Display band names and data
         fill(0);
         text(BANDS[i], rect_x - RECT_WIDTH / 2, 700 + 10);
         text(String.valueOf((float)data_array[i]), rect_x - RECT_WIDTH / 2, 700 + 22);
+
+        if (is_projecting)
+            return;
+
+        // Draw bars
+        fill(COLORS[i]);
+        rect_height = (int)((data_array[i] * RECT_HEIGHT));
+        rect(rect_x, 700 - rect_height / 2, RECT_WIDTH, rect_height);
     }
 }
 

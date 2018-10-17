@@ -12,8 +12,8 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ConcurrentHashMap;
 
-import codeanticode.syphon.*;
-SyphonServer server;
+// import codeanticode.syphon.*;
+// SyphonServer server;
 
 // Leap Motion Variables
 int currentState = 1;
@@ -62,7 +62,7 @@ void settings() {
 
 void setup() {
   //Syphon Server Setup (for projection)
-  server = new SyphonServer(this, "Processing Syphon");
+  // server = new SyphonServer(this, "Processing Syphon");
   // size(1000,900,P2D);
 
 // Images Setup
@@ -122,9 +122,9 @@ void setup() {
 void draw() {
   // Background
   if(is_human_brain()) {
-    background(4, 71, 88, 11);
+    background(4, 71, 88);
   } else if (!is_human_brain()) {
-    background(255, 11);
+    background(255);
   }
 
   // if (state == BCI)
@@ -155,7 +155,7 @@ void draw() {
 
   ////////////////////////////////////////////////////////
 
-  server.sendScreen(); // Sending screen to SythonServer
+  // server.sendScreen(); // Sending screen to SythonServer
   draw_Muse_Reader();
 }
 
@@ -240,28 +240,32 @@ class  Neuron {
     switch (find_brain_sections(x, y)) {
       case 3:
         // band = ALPHA;
-        if (hsi_precision[3] > 0 && hsi_precision[3] < 4)
+        // if (good_connection[3]
+        if (hsi_precision[3] > 0 && hsi_precision[3] < 2)
           stroke(0 + (24 * 2), 255 + (24 * 2), 180 - (24 * 2), score[band] * 80 + 20);
         else
           stroke(150, score[band] * 80 + 20);
         break;
       case 2:
         // band = BETA;
-        if (hsi_precision[2] > 0 && hsi_precision[2] < 4)
+        // if (good_connection[2]
+        if (hsi_precision[2] > 0 && hsi_precision[2] < 2)
           stroke(242, 242 - (24 / 2), 13 + 24, score[band] * 80 + 20);
         else
           stroke(150, score[band] * 80 + 20);
         break;
       case 1:
         // band = GAMMA;
-        if (hsi_precision[1] > 0 && hsi_precision[1] < 4)
+        // if (good_connection[1]
+        if (hsi_precision[1] > 0 && hsi_precision[1] < 2)
           stroke(255 , 159 - (125 / 3), 102 - 125, score[band] * 80 + 20);
         else
           stroke(150, score[band] * 80 + 20);
         break;
       case 0:
         // band = DELTA;
-        if (hsi_precision[0] > 0 && hsi_precision[0] < 4)
+        // if (good_connection[0]
+        if (hsi_precision[0] > 0 && hsi_precision[0] < 2)
           stroke(255,51,51 + (125 * 1.5),score[band] * 80 + 20);
         else
           stroke(150, score[band] * 80 + 20);
@@ -287,7 +291,7 @@ class  Neuron {
 
     if(sig.length > 0) {
       for(int i = 0; i < sig.length; i++) {
-        if(sig[i].running) {
+        if(sig[i] != null && sig[i].running) {
           try {
             pushStyle();
             // print("_"); //debug
@@ -428,8 +432,9 @@ class Signal {
 //////////////// END OF PARAMETERS
 
           // Position & Size of explosion
-          // ellipse(x, y, (abs((rectY / 300) - 4)) * i, (abs((rectY / 300) - 4)) * i);
-          ellipse(x, y, (abs((absolute[BETA] + 0.3 - beta_upper_limit) * 6)) * i, (abs((absolute[BETA] + 0.3 - beta_upper_limit) * 6)) * i);
+          if (state > CALIBRATION)
+            ellipse(x, y, (abs((absolute[BETA] + 0.3 - beta_upper_limit) * 6)) * i, (abs((absolute[BETA] + 0.3 - beta_upper_limit) * 6)) * i);
+
           popStyle();
         }
 
