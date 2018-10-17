@@ -35,19 +35,20 @@ final static int DELTA = 3;
 final static int THETA = 4;
 
 // States
-final static String[] STATES = {"IDLE", "FITTING", "CALIBRATION", "EXPLAINATION", "DETECTION", "BCI", "MEDITATION", "MEDITATION_END"};
+final static String[] STATES = {"IDLE", "FITTING", "CALIBRATION", "EXPLAINATION", "MEDITATION", "BCI", "DETECTION"};
 final static int IDLE = 0;           // Headband not on
 final static int FITTING = 1;        // Adjusting the headband until fitted
-final static int CALIBRATION = 2;    // 15 seconds of calibration
-final static int EXPLAINATION = 3;    // Wait for 10 seconds
-final static int DETECTION = 4;      // Detecting 10 seconds of continuous 'calm'
+final static int CALIBRATION = 2;    // 20 seconds of calibration
+final static int EXPLAINATION = 3;   // Guide user through 3 different interactions
+final static int DETECTION = 6;      // Detecting 10 seconds of continuous 'calm'
 final static int BCI = 5;            // Final state after "flipped"
-
-final static int MEDITATION = 6;    // IF Meditation Mode
-final static int MEDITATION_END = 7;
+final static int MEDITATION = 4;    // IF Meditation Mode
 
 // Audio File
+final static int[] number_of_clips = {1, 2, 2, 9, 2};
 SoundFile calibration_done;
+SoundFile[][] audio_cue = new SoundFile[5][];
+int curr_clip; // The current clip playing
 
 // Data
 int[] hsi_precision = new int[4];
@@ -84,11 +85,22 @@ float diagram_left = 0;
 boolean randomly_moving = false;
 
 void setup_Muse_Reader() {
-  oscP5 = new OscP5(this, recvPort);
-  calibration_done = new SoundFile (this, "success.wav");
+    oscP5 = new OscP5(this, recvPort);
+    calibration_done = new SoundFile (this, "success.wav");
 
-  curr_time = current_time();
-  last_reset_time = curr_time;
+    // for (int i = 0; i < 5; i++) { audio_cue[i] = new audio_cue[]; }
+    // SoundFile s = new SoundFile (this, "AudioCues/Idle.wav");
+    // SoundFile[] x = new SoundFile[]{s};
+    for (int i = 0; i < number_of_clips.length; i++) {
+        audio_cue[i] = new SoundFile[number_of_clips[i]];
+        for (int j = 0; j < number_of_clips[i]; j++) {
+            audio_cue[i][j] = new SoundFile(this, "AudioCues/" + STATES[i] + String.valueOf(j) + ".wav");
+        }
+    }
+
+    curr_time = current_time();
+    last_reset_time = curr_time;
+    changeState(IDLE);
 }
 
 void draw_Muse_Reader() {
@@ -97,20 +109,43 @@ void draw_Muse_Reader() {
 
     // State Machine
     switch (state) {
+        case 0: // IDLE
+            if ((curr_time - state_start_time) % 8 == 0)
+                play_audio(curr_clip);
+            break;
+        case 1:
+            if ((curr_time - state_start_time) > 2 && good_connection[1] && good_connection[2]) { // Sensors at the ears not fitted correctly
+                state_start_time = curr_time - 8;
+                play_audio(1);
+                break;
+            }
+
+            if ((curr_time - state_start_time) % 10 == 0) {
+                state_start_time = curr_time - 1;
+                play_audio(0);
+            }
+            break;
+
         case 2: // CALIBRATION
             time_since_calibrating =  curr_time - state_start_time;
             if (time_since_calibrating > 20 && calibration_data_points > 70)
                 changeState(EXPLAINATION);
-            changeState(EXPLAINATION); //TODO testing only
+            // changeState(EXPLAINATION); //TODO testing only
             break;
 
         case 3: // EXPLAINATION
-            if ((curr_time - state_start_time > 60) // Wait 60 seconds before starting the detection
-                || (keyPressed && key == ENTER))    // Or if "ENTER" was pressed
-                changeState(MEDITATION_MODE ? MEDITATION : DETECTION);
+            // if ((curr_time - state_start_time > 60) // Wait 60 seconds before starting the detection
+            //     || (keyPressed && key == ENTER))    // Skip this state if "ENTER" was pressed
+            //     changeState(MEDITATION_MODE ? MEDITATION : DETECTION);
+
+            // if (keyPressed && key == ENTER)    // Skip this state if "ENTER" was pressed
+            //     changeState(MEDITATION_MODE ? MEDITATION : DETECTION);
+
+
+
             break;
 
-        case 6: // MEDITATION
+        case 4: // MEDITATION
             if (curr_time - state_start_time > MEDITATION_TIME)
                 changeState(BCI); // TODO MEDITATION_END
             break;
@@ -146,6 +181,16 @@ void draw_Muse_Reader() {
         // visualizeData(eeg);
 }
 
+void keyReleased() {
+    if (key == ENTER)
+        changeState(state + 1);
+    else if (key == ' ') {
+        good_connection[1] = !good_connection[1];
+        good_connection[2] = !good_connection[2];
+    }
+
+}
+
 void resetBrain() { // DEBUG
     idleChange = true;
     last_reset_time = curr_time;
@@ -168,6 +213,8 @@ void changeState(int new_state) {
     }
 
     if (new_state == IDLE) {
+        audio_cue[state][0].play();
+
         resetBrain();
         artBrainLoop.stop();
         humBrainLoop.stop();
@@ -188,8 +235,32 @@ void changeState(int new_state) {
     println("Change to new state: ", STATES[new_state]);
     state = new_state;
     state_start_time = curr_time;
+
+    // if (state >= number_of_clips.length)
+    //     return;
+    curr_clip = 0;
 }
 
+void nextClip() {
+    if (curr_clip + 1 < number_of_clips[state]) {
+        audio_cue[state][curr_clip].stop(); // Stop the current clip
+        curr_clip++;
+        audio_cue[state][curr_clip].play();
+    }
+}
+
+void play_audio(int clip_to_play) {
+    if (!audio_cue[state][curr_clip].isPlaying()) {
+        curr_clip = clip_to_play;
+        audio_cue[state][curr_clip].play();
+    }
+}
+
+/* Change to next state whenever the current audio clip has finished playing */
+void changeStateAudio() {
+    if (!audio_cue[state][curr_clip].isPlaying())
+        changeState(state + 1);
+}
 
 void oscEvent(OscMessage msg) {
     if (debugOSC) {
@@ -200,23 +271,27 @@ void oscEvent(OscMessage msg) {
     randomly_moving = true;
     getHeadbandStatus(msg);
     // getEEG(msg);
+    getAbsolute(msg);
 
-    switch (state)
-    {
-        case 2: // CALIBRATION
-            getAbsolute(msg);
-            break;
+    if (state > CALIBRATION)
+        getScore(msg);
 
-        case 4: // DETECTION
-            getAbsolute(msg);
-            getScore(msg);
-            break;
+    // switch (state)
+    // {
+    //     case 2: // CALIBRATION
+    //         getAbsolute(msg);
+    //         break;
 
-        default :
-            getAbsolute(msg);
-            getScore(msg);
-            break;
-    }
+    //     case 6: // DETECTION
+    //         getAbsolute(msg);
+    //         getScore(msg);
+    //         break;
+
+    //     default :
+    //         getAbsolute(msg);
+    //         getScore(msg);
+    //         break;
+    // }
 }
 
 /* Meditation Visualization */
