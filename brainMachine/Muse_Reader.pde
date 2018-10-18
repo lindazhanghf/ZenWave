@@ -46,9 +46,12 @@ final static int MEDITATION = 4;    // IF Meditation Mode
 
 // Audio File
 final static int[] number_of_clips = {1, 2, 2, 9, 2};
-SoundFile calibration_done;
 SoundFile[][] audio_cue = new SoundFile[5][];
-int curr_clip; // The current clip playing
+SoundFile calibration_done;
+SoundFile skip_step;
+int curr_clip;  // The current clip playing
+int audio_time = -1; // Time when audio is done; to keep track of when to play the next clip
+boolean waiting_for_nod = false;
 
 // Data
 int[] hsi_precision = new int[4];
@@ -68,13 +71,14 @@ float beta_upper_limit = 0.3; // Calculated by average of of Beta absolute band 
 float beta_sum;               // Sum of Beta absolute band power during CALIBRATION state
 int calibration_data_points;  // The number of beta data points collected duirng CALIBRATION state
 int beta_data_points;         // The number of beta data points collected duirng DETECTION / MEDITATION state
-int curr_time;
+boolean start_meditation = false;
 
 // State Machine
 int state = IDLE;
+int curr_time;
 int calm_start_time = -1;
 int state_start_time = -1;
-int time_since_calibrating = -1;
+int calibration_time = -1;
 
 // Visualization
 int last_reset_time = -1;    // Keep track of when the rest brain (position of neurons)
@@ -87,6 +91,7 @@ boolean randomly_moving = false;
 void setup_Muse_Reader() {
     oscP5 = new OscP5(this, recvPort);
     calibration_done = new SoundFile (this, "success.wav");
+    skip_step = new SoundFile (this, "AudioCues/SKIP.wav");
 
     // for (int i = 0; i < 5; i++) { audio_cue[i] = new audio_cue[]; }
     // SoundFile s = new SoundFile (this, "AudioCues/Idle.wav");
@@ -100,7 +105,6 @@ void setup_Muse_Reader() {
 
     curr_time = current_time();
     last_reset_time = curr_time;
-    changeState(IDLE);
 }
 
 void draw_Muse_Reader() {
@@ -127,37 +131,77 @@ void draw_Muse_Reader() {
             break;
 
         case 2: // CALIBRATION
-            time_since_calibrating =  curr_time - state_start_time;
-            if (time_since_calibrating > 20 && calibration_data_points > 70)
-                changeState(EXPLAINATION);
-            // changeState(EXPLAINATION); //TODO testing only
+            calibration_time =  curr_time - state_start_time;
+            if (calibration_data_points >= 70)
+                change_state_when_finished();
+            changeState(EXPLAINATION); //TODO testing only
             break;
 
         case 3: // EXPLAINATION
-            // if ((curr_time - state_start_time > 60) // Wait 60 seconds before starting the detection
-            //     || (keyPressed && key == ENTER))    // Skip this state if "ENTER" was pressed
-            //     changeState(MEDITATION_MODE ? MEDITATION : DETECTION);
+            if (wait_nod) {
+                if (detect_nod()) {
+                    wait_nod = false;
+                    nextClip();
+                    if (curr_clip + 1 >= number_of_clips[state]) changeState(MEDITATION);
+                }
+                break;
+            }
 
-            // if (keyPressed && key == ENTER)    // Skip this state if "ENTER" was pressed
-            //     changeState(MEDITATION_MODE ? MEDITATION : DETECTION);
+            // Do nothing if the audio is still playing
+            if (audio_cue[state][curr_clip].isPlaying()) break;
+            // If audio stopped:
+            switch (curr_clip % 3) {
+                case 0:
+                    if (curr_clip == 0)
+                        nextClip();
+                    // clip = 3, 6
+                    wait_nod();
+                    break;
+                case 1:  // clip = 1, 4 or 7
+                    if (audio_time < 0)
+                        audio_time = curr_time;
+                    else if (audio_time > 0 && curr_time - audio_time > 3)    // wait for 3 seconds and play next clip
+                        nextClip();
+                    break;
+                case 2:  // clip = 2, 5, or 8
+                    if (clip == 8) {
+                        wait_nod();
+                        break;
+                    }
 
-
-
+                    if (audio_time < 0)
+                        audio_time = curr_time;
+                    else if (audio_time > 0 && curr_time - audio_time > 5)    // wait for 5 seconds and play next clip
+                        nextClip();
+                    break;
+            }
             break;
 
         case 4: // MEDITATION
             if (curr_time - state_start_time > MEDITATION_TIME)
                 changeState(BCI); // TODO MEDITATION_END
+
+            if (audio_cue[state][curr_clip].isPlaying()) break;
+            // If audio stopped:
+            if (audio_time < 0) {
+                audio_cue[state][curr_clip++].play(); // start to play the second clip
+                audio_time = curr_time;
+            } else if (audio_time > 0) {             // meditation starts after the second clip
+                state_start_time = curr_time;        // reset state start time
+                start_meditation = true;
+            }
+        default:
             break;
-        default: break;
     }
+    println(audio_time, wait_nod);
 
     if ((curr_time - state_start_time) % 5 == 0)
         randomly_moving = false;
 
     // Testing
     text("State:", 800, 15);
-    text(STATES[state], 900, 15);
+    text(STATES[state], 850, 15);
+    text(curr_clip, 950, 15);
 
     if (calm_start_time > 0) text(curr_time - calm_start_time, 900,40);
     else text(curr_time - state_start_time, 900,40);
@@ -188,7 +232,27 @@ void keyReleased() {
         good_connection[1] = !good_connection[1];
         good_connection[2] = !good_connection[2];
     }
+    else if (key == 's' && state == EXPLAINATION) {    // Skip the "tutorial", to meditation state
+        // curr_clip += 3;
+        // if (curr_clip > number_of_clips[EXPLAINATION])
+        changeState(MEDITATION);
+    }
+}
 
+boolean detect_nod() {
+    if (keyPressed && key == 'n')
+        return true;
+    // TODO Implement detect nod using gyro
+    return false;
+}
+
+void wait_nod() {
+    if (audio_time < 0)
+        audio_time = curr_time;
+    else if (audio_time > 0 && curr_time - audio_time > 3) {
+        skip_step.play();
+        waiting_for_nod = true;
+    }
 }
 
 void resetBrain() { // DEBUG
@@ -212,6 +276,11 @@ void changeState(int new_state) {
         println ("rect y = ", diagram_bottom_y);
     }
 
+    println("Change to new state: ", STATES[new_state]);
+    state = new_state;
+    state_start_time = curr_time;
+    curr_clip = 0;
+
     if (new_state == IDLE) {
         audio_cue[state][0].play();
 
@@ -220,33 +289,30 @@ void changeState(int new_state) {
         humBrainLoop.stop();
         rectY = 200;
     }
+    else if (new_state == CALIBRATION) {
+        audio_cue[state][0].play();
+        humBrainLoop.loop(1);
+    }
+    else if (new_state == EXPLAINATION) {
+        audio_cue[state][0].play();
+        resetBrain();
+    }
+    else if (new_state == MEDITATION)
+        audio_cue[state][0].play();
     else if (new_state == BCI) {
         humBrainLoop.stop();
         artBrainLoop.loop(1);
         rectY = 50;
     }
-    else if (new_state == CALIBRATION) {
-        humBrainLoop.loop(1);
-    }
-    else if (new_state == EXPLAINATION) {
-        resetBrain();
-    }
-
-    println("Change to new state: ", STATES[new_state]);
-    state = new_state;
-    state_start_time = curr_time;
-
-    // if (state >= number_of_clips.length)
-    //     return;
-    curr_clip = 0;
 }
 
 void nextClip() {
     if (curr_clip + 1 < number_of_clips[state]) {
         audio_cue[state][curr_clip].stop(); // Stop the current clip
-        curr_clip++;
-        audio_cue[state][curr_clip].play();
+        audio_cue[state][curr_clip + 1].play();
     }
+    curr_clip++;
+    audio_time = -1;
 }
 
 void play_audio(int clip_to_play) {
@@ -257,7 +323,7 @@ void play_audio(int clip_to_play) {
 }
 
 /* Change to next state whenever the current audio clip has finished playing */
-void changeStateAudio() {
+void change_state_when_finished() {
     if (!audio_cue[state][curr_clip].isPlaying())
         changeState(state + 1);
 }
@@ -271,6 +337,8 @@ void oscEvent(OscMessage msg) {
     randomly_moving = true;
     getHeadbandStatus(msg);
     // getEEG(msg);
+
+    if (state > FITTING && state < BCI)
     getAbsolute(msg);
 
     if (state > CALIBRATION)
@@ -338,9 +406,9 @@ void visualize_meditation() {
 }
 
 void collect_meditation(boolean has_beta_data) {
-    if (beta_data_points >= beta.length) // Data array overflow
+    if (!start_meditation && beta_data_points >= beta.length) // Data array overflow
         return;
-    good[beta_data_points] = is_good;
+    // good[beta_data_points] = is_good;
 
     if (!has_beta_data)
         beta[beta_data_points] = Float.NaN;
@@ -457,10 +525,15 @@ void getAbsolute(OscMessage msg) {
     if (has_data && msg.checkAddrPattern(muse_name + "/elements/beta_absolute")) {
         if (state == DETECTION)
             detect_calmness();
-        else if (state == CALIBRATION && time_since_calibrating > 10 && is_good > 2)
+        else if (calibration_data_points < 70 && state == CALIBRATION && calibration_time > 10 && is_good > 2)
         {
             beta_sum += absolute[BETA];
             calibration_data_points++;
+
+            if (calibration_time > 20 && calibration_data_points > 70) {
+                // changeState(EXPLAINATION);
+                curr_clip++;
+            }
         }
     }
 }
