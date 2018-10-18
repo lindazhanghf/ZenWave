@@ -114,7 +114,7 @@ void draw_Muse_Reader() {
     // State Machine
     switch (state) {
         case 0: // IDLE
-            if ((curr_time - state_start_time) % 8 == 0)
+            if ((curr_time - state_start_time - 1) % 8 == 0)
                 play_audio(curr_clip);
             break;
         case 1:
@@ -135,6 +135,7 @@ void draw_Muse_Reader() {
             if (calibration_data_points >= 70)
                 change_state_when_finished();
             // changeState(EXPLAINATION); //TODO testing only, skip calibration
+            // TODO missing second audio
             break;
 
         case 3: // EXPLAINATION
@@ -154,8 +155,8 @@ void draw_Muse_Reader() {
                 case 0:
                     if (curr_clip == 0)
                         nextClip();
-                    // clip = 3, 6
-                    wait_nod();
+                    else // clip = 3, 6
+                        wait_nod();
                     break;
                 case 1:  // clip = 1, 4 or 7
                     if (audio_time < 0)
@@ -183,16 +184,9 @@ void draw_Muse_Reader() {
                 break;
             }
 
-            if (audio_cue[state][curr_clip].isPlaying()) break;
-            // If audio stopped:
-            if (curr_clip == 0 && audio_time < 0) {
-                curr_clip++;
-                audio_cue[state][curr_clip].play(); // start to play the second clip
-                audio_time = curr_time;
-            } else if (audio_time > 0) {             // meditation starts after the second clip
+            if (!start_meditation && audio_cue[state][curr_clip].isPlaying()) {
                 state_start_time = curr_time;        // reset state start time
-                start_meditation = true;
-                audio_time = -1;
+                start_meditation = true;             // meditation starts
             }
         default:
             break;
@@ -279,6 +273,14 @@ void changeState(int new_state) {
         diagram_bottom_y = BASELINE_HEIGHT + beta_upper_limit * RECT_HEIGHT * 2;
         println ("rect y = ", diagram_bottom_y);
     }
+    else if (state == BCI) {  // reset collected data
+        beta_upper_limit = 0.3;
+        calibration_data_points = 0;
+        beta = new float[1000];
+        good = new int[1000];
+    }
+
+    // Stop previous audio
     if (state < number_of_clips.length && curr_clip < number_of_clips[state])
         audio_cue[state][curr_clip].stop();
 
@@ -288,8 +290,7 @@ void changeState(int new_state) {
     curr_clip = 0;
 
     if (new_state == IDLE) {
-        audio_cue[state][0].play();
-
+        // audio_cue[state][0].play();
         resetBrain();
         artBrainLoop.stop();
         humBrainLoop.stop();
@@ -378,7 +379,7 @@ void visualize_meditation() {
 
     stroke(0);
     text((beta_upper_limit), DIAGRAM_LEFT_LIMIT, BASELINE_HEIGHT);
-    text(beta[beta_data_points-1], x, y);
+    if (beta_data_points > 0) text(beta[beta_data_points-1], x, y);
     text("0", x, diagram_bottom_y);
 
     stroke(COLORS[0]);
@@ -412,19 +413,16 @@ void collect_meditation(boolean has_beta_data) {
 void visualizeData(float[] data_array) {
     for (int i = 0; i < data_array.length; i++) {
         rect_x = 550 + i * 100;
-
+        // Draw bars
+        if (!is_projecting) {
+            fill(COLORS[i]);
+            rect_height = (int)((data_array[i] * RECT_HEIGHT));
+            rect(rect_x, 700 - rect_height / 2, RECT_WIDTH, rect_height);
+        }
         // Display band names and data
         fill(0);
         text(BANDS[i], rect_x - RECT_WIDTH / 2, 700 + 10);
         text(String.valueOf((float)data_array[i]), rect_x - RECT_WIDTH / 2, 700 + 22);
-
-        if (is_projecting)
-            return;
-
-        // Draw bars
-        fill(COLORS[i]);
-        rect_height = (int)((data_array[i] * RECT_HEIGHT));
-        rect(rect_x, 700 - rect_height / 2, RECT_WIDTH, rect_height);
     }
 }
 
@@ -483,7 +481,6 @@ void getHeadbandStatus(OscMessage msg) {
             if (hsi_precision[i] > 2)
                 calm_start_time = -1; // Not fitted, restart calm detection
         }
-
         // if (state ==  FITTING && sum_precision == 4) // 4 means all fitted
         //     changeState(CALIBRATION);
     }
@@ -513,7 +510,7 @@ void getAbsolute(OscMessage msg) {
     if (has_data && msg.checkAddrPattern(muse_name + "/elements/beta_absolute")) {
         if (state == DETECTION)
             detect_calmness();
-        else if (calibration_data_points < 70 && state == CALIBRATION && calibration_time > 10 && is_good > 2)
+        else if (calibration_data_points < 70 && state == CALIBRATION && calibration_time > 12 && is_good > 2)
         {
             beta_sum += absolute[BETA];
             calibration_data_points++;

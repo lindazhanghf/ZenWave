@@ -61,17 +61,17 @@ void settings() {
 }
 
 void setup() {
-  //Syphon Server Setup (for projection)
+//Syphon Server Setup (for projection)
   // server = new SyphonServer(this, "Processing Syphon");
-  // size(1000,900,P2D);
 
 // Images Setup
   brainCore = loadImage("brainMask.png");
 
 // Audio Loop
   artBrainLoop = new SoundFile (this, "artBrain.mp3");
+  artBrainLoop.amp(0.8);
   humBrainLoop = new SoundFile (this, "jazzLoop.wav");
-  // humBrainLoop.loop(1);
+  humBrainLoop.amp(0.5);
 
   // Neuron Setup
   n = new Neuron[580];
@@ -120,6 +120,8 @@ void setup() {
 ////////////////////////////////////////////////////////
 
 void draw() {
+  // server.sendScreen(); // Sending screen to MadMapper via Syphon
+
   // Background
   if(is_human_brain()) {
     background(4, 71, 88);
@@ -150,12 +152,12 @@ void draw() {
 
   resetNeurons();
 
-  image(brainCore,0,0,1000,1000);
+  if (!is_projecting)
+    image(brainCore,0,0,1000,1000);
 
 
   ////////////////////////////////////////////////////////
 
-  // server.sendScreen(); // Sending screen to SythonServer
   draw_Muse_Reader();
 }
 
@@ -235,47 +237,52 @@ class  Neuron {
 
   void drawSynapse() {
     int band = BETA; // Only visualize the Beta band
-    switch (find_brain_sections(x, y)) {
-      case 3:
-        // band = ALPHA;
-        // if (good_connection[3]
-        if (hsi_precision[3] > 0 && hsi_precision[3] < 2)
-          stroke(0 + (24 * 2), 255 + (24 * 2), 180 - (24 * 2), score[band] * 80 + 20);
-        else
-          stroke(150, score[band] * 80 + 20);
-        break;
-      case 2:
-        // band = BETA;
-        // if (good_connection[2]
-        if (hsi_precision[2] > 0 && hsi_precision[2] < 2)
-          stroke(242, 242 - (24 / 2), 13 + 24, score[band] * 80 + 20);
-        else
-          stroke(150, score[band] * 80 + 20);
-        break;
-      case 1:
-        // band = GAMMA;
-        // if (good_connection[1]
-        if (hsi_precision[1] > 0 && hsi_precision[1] < 2)
-          stroke(255 , 159 - (125 / 3), 102 - 125, score[band] * 80 + 20);
-        else
-          stroke(150, score[band] * 80 + 20);
-        break;
-      case 0:
-        // band = DELTA;
-        // if (good_connection[0]
-        if (hsi_precision[0] > 0 && hsi_precision[0] < 2)
-          stroke(255,51,51 + (125 * 1.5),score[band] * 80 + 20);
-        else
-          stroke(150, score[band] * 80 + 20);
-        break;
-      default : // case 4
-        // band = THETA;
-        if (headband_on)
-          stroke(255, 128 - (125 / 2),0,score[band] * 80 + 20);
-        else
-          stroke(150, score[band] * 80 + 20);
-      break;
-    }
+    // switch (find_brain_sections(x, y)) {
+    //   case 3:
+    //     // band = ALPHA;
+    //     // if (good_connection[3]
+    //     if (hsi_precision[3] > 0 && hsi_precision[3] < 4) // <2
+    //       stroke(0 + (24 * 2), 255 + (24 * 2), 180 - (24 * 2), score[band] * 80 + 20);
+    //     else
+    //       stroke(150, score[band] * 80 + 20);
+    //     break;
+    //   case 2:
+    //     // band = BETA;
+    //     // if (good_connection[2]
+    //     if (hsi_precision[2] > 0 && hsi_precision[2] < 4) // <2
+    //       stroke(242, 242 - (24 / 2), 13 + 24, score[band] * 80 + 20);
+    //     else
+    //       stroke(150, score[band] * 80 + 20);
+    //     break;
+    //   case 1:
+    //     // band = GAMMA;
+    //     // if (good_connection[1]
+    //     if (hsi_precision[1] > 0 && hsi_precision[1] < 4) // <2
+    //       stroke(255 , 159 - (125 / 3), 102 - 125, score[band] * 80 + 20);
+    //     else
+    //       stroke(150, score[band] * 80 + 20);
+    //     break;
+    //   case 0:
+    //     // band = DELTA;
+    //     // if (good_connection[0]
+    //     if (hsi_precision[0] > 0 && hsi_precision[0] < 4) // <2
+    //       stroke(255,51,51 + (125 * 1.5),score[band] * 80 + 20);
+    //     else
+    //       stroke(150, score[band] * 80 + 20);
+    //     break;
+    //   default : // case 4
+    //     // band = THETA;
+    //     if (headband_on)
+    //       stroke(255, 128 - (125 / 2),0,score[band] * 80 + 20);
+    //     else
+    //       stroke(150, score[band] * 80 + 20);
+    //   break;
+    // }
+    if (hsi_precision[2] > 0 && hsi_precision[2] < 4) // <2
+      stroke(242, 242 - (24 / 2), 13 + 24, score[BETA] * 80 + 20);
+    else
+      stroke(150, score[BETA] * 80 + 20);
+
     if (!is_human_brain())
       fill_in_synapse_AI();
 
