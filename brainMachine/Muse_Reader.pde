@@ -134,13 +134,13 @@ void draw_Muse_Reader() {
             calibration_time =  curr_time - state_start_time;
             if (calibration_data_points >= 70)
                 change_state_when_finished();
-            changeState(EXPLAINATION); //TODO testing only
+            // changeState(EXPLAINATION); //TODO testing only, skip calibration
             break;
 
         case 3: // EXPLAINATION
-            if (wait_nod) {
+            if (waiting_for_nod) {
                 if (detect_nod()) {
-                    wait_nod = false;
+                    waiting_for_nod = false;
                     nextClip();
                     if (curr_clip + 1 >= number_of_clips[state]) changeState(MEDITATION);
                 }
@@ -164,7 +164,7 @@ void draw_Muse_Reader() {
                         nextClip();
                     break;
                 case 2:  // clip = 2, 5, or 8
-                    if (clip == 8) {
+                    if (curr_clip == 8) {
                         wait_nod();
                         break;
                     }
@@ -178,22 +178,26 @@ void draw_Muse_Reader() {
             break;
 
         case 4: // MEDITATION
-            if (curr_time - state_start_time > MEDITATION_TIME)
+            if (curr_time - state_start_time > MEDITATION_TIME) {
                 changeState(BCI); // TODO MEDITATION_END
+                break;
+            }
 
             if (audio_cue[state][curr_clip].isPlaying()) break;
             // If audio stopped:
-            if (audio_time < 0) {
-                audio_cue[state][curr_clip++].play(); // start to play the second clip
+            if (curr_clip == 0 && audio_time < 0) {
+                curr_clip++;
+                audio_cue[state][curr_clip].play(); // start to play the second clip
                 audio_time = curr_time;
             } else if (audio_time > 0) {             // meditation starts after the second clip
                 state_start_time = curr_time;        // reset state start time
                 start_meditation = true;
+                audio_time = -1;
             }
         default:
             break;
     }
-    println(audio_time, wait_nod);
+    println(audio_time, waiting_for_nod);
 
     if ((curr_time - state_start_time) % 5 == 0)
         randomly_moving = false;
@@ -275,6 +279,8 @@ void changeState(int new_state) {
         diagram_bottom_y = BASELINE_HEIGHT + beta_upper_limit * RECT_HEIGHT * 2;
         println ("rect y = ", diagram_bottom_y);
     }
+    if (state < number_of_clips.length && curr_clip < number_of_clips[state])
+        audio_cue[state][curr_clip].stop();
 
     println("Change to new state: ", STATES[new_state]);
     state = new_state;
@@ -336,30 +342,12 @@ void oscEvent(OscMessage msg) {
 
     randomly_moving = true;
     getHeadbandStatus(msg);
-    // getEEG(msg);
 
     if (state > FITTING && state < BCI)
     getAbsolute(msg);
 
     if (state > CALIBRATION)
         getScore(msg);
-
-    // switch (state)
-    // {
-    //     case 2: // CALIBRATION
-    //         getAbsolute(msg);
-    //         break;
-
-    //     case 6: // DETECTION
-    //         getAbsolute(msg);
-    //         getScore(msg);
-    //         break;
-
-    //     default :
-    //         getAbsolute(msg);
-    //         getScore(msg);
-    //         break;
-    // }
 }
 
 /* Meditation Visualization */
@@ -389,7 +377,7 @@ void visualize_meditation() {
     line(DIAGRAM_LEFT_LIMIT, BASELINE_HEIGHT, DIAGRAM_LEFT_LIMIT + beta_data_points, BASELINE_HEIGHT);
 
     stroke(0);
-    text("____" + String.valueOf(beta_upper_limit), x, BASELINE_HEIGHT);
+    text((beta_upper_limit), DIAGRAM_LEFT_LIMIT, BASELINE_HEIGHT);
     text(beta[beta_data_points-1], x, y);
     text("0", x, diagram_bottom_y);
 
@@ -408,7 +396,7 @@ void visualize_meditation() {
 void collect_meditation(boolean has_beta_data) {
     if (!start_meditation && beta_data_points >= beta.length) // Data array overflow
         return;
-    // good[beta_data_points] = is_good;
+    good[beta_data_points] = is_good; // Collect is_good data for reference
 
     if (!has_beta_data)
         beta[beta_data_points] = Float.NaN;

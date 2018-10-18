@@ -233,9 +233,7 @@ class  Neuron {
 
 
 
-  void
-
-  drawSynapse() {
+  void drawSynapse() {
     int band = BETA; // Only visualize the Beta band
     switch (find_brain_sections(x, y)) {
       case 3:
@@ -281,10 +279,13 @@ class  Neuron {
     if (!is_human_brain())
       fill_in_synapse_AI();
 
-    for(int i = 0;i<s.length;i+=1) {
-      line(n[s[i].B].xx,n[s[i].B].yy,xx,yy);
+    try {
+      for(int i = 0;i<s.length;i+=1) {
+        line(n[s[i].B].xx,n[s[i].B].yy,xx,yy);
+      }
+    } catch (Exception e) {
+      print("BREAKS!");  //debug
     }
-
   }
 
   void drawSignal () {
