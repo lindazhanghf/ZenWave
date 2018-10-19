@@ -18,9 +18,10 @@ OscP5 oscP5;
 final static NetAddress muse_manager_address = new NetAddress("127.0.0.1", 7980);
 
 // Time
-import java.util.Calendar;
-import java.util.TimeZone;
-Calendar calendar;
+// import java.util.Calendar;
+// import java.util.TimeZone;
+// Calendar calendar;
+// TODO use ISO time: System.currentTimeMillis()
 
 // MACROS
 final static boolean MEDITATION_MODE = true; // "true" for mediation, "false" for clam detection mode
@@ -52,7 +53,7 @@ final static int DETECTION = 6;      // Detecting 10 seconds of continuous 'calm
 final static int BCI = 5;            // Final state after "flipped"
 final static int MEDITATION = 4;    // IF Meditation Mode
 
-// Audio File
+// Audio Cues
 final static int[] number_of_clips = {1, 2, 2, 9, 2};
 SoundFile[][] audio_cue = new SoundFile[5][];
 SoundFile calibration_done;
@@ -63,16 +64,16 @@ boolean waiting_for_nod = false;
 
 // Data
 int[] hsi_precision = new int[4];
-float[] relative = new float[5];
+// float[] relative = new float[5];
 float[] absolute = new float[5];
 float[] score = new float[5];
-float[] eeg = new float[4];
+float[] eeg;
 boolean[] good_connection = new boolean[4];
 int is_good;
 boolean headband_on = false;
 boolean has_data = false;
-float[] beta = new float[1000]; // Collects data during meditation phase
-int[] good = new int[1000]; // TESTING ONLY! TODO
+// float[] beta = new float[1000]; // Collects data during meditation phase
+// int[] good = new int[1000]; // TESTING ONLY! TODO
 
 // Calibration & Detection
 float beta_upper_limit = 0.3; // Calculated by average of of Beta absolute band power during CALIBRATION state
@@ -98,7 +99,6 @@ boolean randomly_moving = false;
 
 void setup_Muse_Reader() {
     oscP5 = new OscP5(this, recvPort);
-    calendar = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
 
     calibration_done = new SoundFile (this, "success.wav");
     skip_step = new SoundFile (this, "AudioCues/SKIP.wav");
@@ -123,6 +123,9 @@ void draw_Muse_Reader() {
         case 0: // IDLE
             if ((curr_time - state_start_time - 1) % 8 == 0)
                 play_audio(curr_clip);
+
+            if ((curr_time - state_start_time - 1) % 16 == 0)
+                resetBrain();
             break;
         case 1:
             if ((curr_time - state_start_time) > 2 && good_connection[1] && good_connection[2]) { // Sensors at the ears not fitted correctly
@@ -220,10 +223,10 @@ void draw_Muse_Reader() {
 
     // Draw bar chart
     if (state == BCI) {
-        if (MEDITATION_MODE && !is_projecting)
-            visualize_meditation();
-        else
-            visualizeData(score);
+        // if (MEDITATION_MODE && !is_projecting)
+        //     visualize_meditation();
+        // else
+        visualizeData(score);
     }
     else
         visualizeData(absolute);
@@ -285,8 +288,8 @@ void changeState(int new_state) {
     else if (state == BCI) {  // reset collected data
         beta_upper_limit = 0.3;
         calibration_data_points = 0;
-        beta = new float[1000];
-        good = new int[1000];
+        // beta = new float[1000];
+        // good = new int[1000];
     }
 
     // Stop previous audio
@@ -361,65 +364,64 @@ void oscEvent(OscMessage msg) {
 }
 
 /* Meditation Visualization */
-void visualize_meditation() {
-    float _x = 0, x = 0, y = 0;
-    float _y = Float.NaN;
+// void visualize_meditation() {
+//     float _x = 0, x = 0, y = 0;
+//     float _y = Float.NaN;
 
-    fill(0);
-    stroke(0);
-    background(255);
-    for (int i = 0; i < beta_data_points; i++) {
-        x = i + DIAGRAM_LEFT_LIMIT;
+//     fill(0);
+//     stroke(0);
+//     background(255);
+//     for (int i = 0; i < beta_data_points; i++) {
+//         x = i + DIAGRAM_LEFT_LIMIT;
 
-        if (Float.isNaN(beta[i]))
-            y = Float.NaN;
-        else
-            y = diagram_bottom_y - beta[i] * RECT_HEIGHT * 2;
+//         if (Float.isNaN(beta[i]))
+//             y = Float.NaN;
+//         else
+//             y = diagram_bottom_y - beta[i] * RECT_HEIGHT * 2;
 
-        // Only draw this line signment if there's  data
-        if (!Float.isNaN(_y)) {
-            line(_x, _y, x, y);
-        }
-        _x = x;
-        _y = y;
-    }
+//         // Only draw this line signment if there's  data
+//         if (!Float.isNaN(_y)) {
+//             line(_x, _y, x, y);
+//         }
+//         _x = x;
+//         _y = y;
+//     }
 
-    line(DIAGRAM_LEFT_LIMIT, BASELINE_HEIGHT, DIAGRAM_LEFT_LIMIT + beta_data_points, BASELINE_HEIGHT);
+//     line(DIAGRAM_LEFT_LIMIT, BASELINE_HEIGHT, DIAGRAM_LEFT_LIMIT + beta_data_points, BASELINE_HEIGHT);
 
-    stroke(0);
-    text((beta_upper_limit), DIAGRAM_LEFT_LIMIT, BASELINE_HEIGHT);
-    if (beta_data_points > 0) text(beta[beta_data_points-1], x, y);
-    text("0", x, diagram_bottom_y);
+//     stroke(0);
+//     text((beta_upper_limit), DIAGRAM_LEFT_LIMIT, BASELINE_HEIGHT);
+//     if (beta_data_points > 0) text(beta[beta_data_points-1], x, y);
+//     text("0", x, diagram_bottom_y);
 
-    stroke(COLORS[0]);
-    fill(COLORS[0]);
-    x = 0;
-    y = 0;
-    for (int i = 0; i < beta_data_points; i++) {
-        x = i + DIAGRAM_LEFT_LIMIT;
-        y = diagram_bottom_y - good[i] * 100;
-        ellipse(x, y, 5, 5);
-    }
-
-}
+//     stroke(COLORS[0]);
+//     fill(COLORS[0]);
+//     x = 0;
+//     y = 0;
+//     for (int i = 0; i < beta_data_points; i++) {
+//         x = i + DIAGRAM_LEFT_LIMIT;
+//         y = diagram_bottom_y - good[i] * 100;
+//         ellipse(x, y, 5, 5);
+//     }
+// }
 
 void collect_meditation(boolean has_beta_data) {
-    if (!start_meditation && beta_data_points >= beta.length) // Data array overflow
+    if (!start_meditation) //  && beta_data_points >= beta.length Data array overflow
         return;
-    good[beta_data_points] = is_good; // Collect is_good data for reference
+    // good[beta_data_points] = is_good; // Collect is_good data for reference
 
-    if (!has_beta_data)
-        beta[beta_data_points] = Float.NaN;
-    else if (is_good <= 2)
-        beta[beta_data_points] = beta[beta_data_points-1]; // Use previous val
-    else
-        beta[beta_data_points] = absolute[BETA];
+    // if (!has_beta_data)
+    //     beta[beta_data_points] = Float.NaN;
+    // else if (is_good <= 2)
+    //     beta[beta_data_points] = beta[beta_data_points-1]; // Use previous val
+    // else
+    //     beta[beta_data_points] = absolute[BETA];
 
-    beta_data_points++;
+    // beta_data_points++;
 
     OscMessage data_msg = new OscMessage("Person0/data");
     data_msg.add(absolute[BETA]);
-    data_msg.add(calendar.get(Calendar.MILLISECOND));
+    data_msg.add(curr_clip);
     data_msg.add(is_good);
 
     OSC_send(data_msg);
@@ -547,9 +549,9 @@ void getScore(OscMessage msg) {
 }
 
 /* Relative Band Power */
-void getRelative(OscMessage msg) {
-    get_elements_data(msg, "relative", relative);
-}
+// void getRelative(OscMessage msg) {
+//     get_elements_data(msg, "relative", relative);
+// }
 
 /* Get OSC data within the "elements" category */
 boolean get_elements_data(OscMessage msg, String element_name, float[] data_array) {
@@ -636,13 +638,7 @@ float get_OSC_value(OscMessage msg, int index) {
 void create_OSC_message(int state) {
   /* in the following different ways of creating osc messages are shown by example */
   OscMessage myMessage = new OscMessage("Person0/state");
-
   myMessage.add(state); /* add an int to the osc message */
-  // myMessage.add(12.34); /* add a float to the osc message */
-  // myMessage.add("some text"); /* add a string to the osc message */
-  // myMessage.add(new byte[] {0x00, 0x01, 0x10, 0x20}); /* add a byte blob to the osc message */
-  // myMessage.add(new int[] {1,2,3,4}); /* add an int array to the osc message */
-
   /* send the message */
   oscP5.send(myMessage, muse_manager_address);
 }
