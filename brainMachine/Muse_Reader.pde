@@ -64,16 +64,14 @@ boolean waiting_for_nod = false;
 
 // Data
 int[] hsi_precision = new int[4];
-// float[] relative = new float[5];
 float[] absolute = new float[5];
 float[] score = new float[5];
 float[] eeg;
+// float[] gyroscope = new float[3];
 boolean[] good_connection = new boolean[4];
 int is_good;
 boolean headband_on = false;
 boolean has_data = false;
-// float[] beta = new float[1000]; // Collects data during meditation phase
-// int[] good = new int[1000]; // TESTING ONLY! TODO
 
 // Calibration & Detection
 float beta_upper_limit = 0.3; // Calculated by average of of Beta absolute band power during CALIBRATION state
@@ -81,6 +79,9 @@ float beta_sum;               // Sum of Beta absolute band power during CALIBRAT
 int calibration_data_points;  // The number of beta data points collected duirng CALIBRATION state
 int beta_data_points;         // The number of beta data points collected duirng DETECTION / MEDITATION state
 boolean start_meditation = false;
+boolean nodded = false;
+int gyro_state = 0;
+int nod_counter;
 
 // State Machine
 int state = IDLE;
@@ -149,7 +150,7 @@ void draw_Muse_Reader() {
             break;
 
         case 3: // EXPLAINATION
-            if (waiting_for_nod) {
+            if (curr_clip == 0 || waiting_for_nod) {
                 if (detect_nod()) {
                     waiting_for_nod = false;
                     nextClip();
@@ -223,14 +224,11 @@ void draw_Muse_Reader() {
 
     // Draw bar chart
     if (state == BCI) {
-        // if (MEDITATION_MODE && !is_projecting)
-        //     visualize_meditation();
-        // else
         visualizeData(score);
     }
     else
         visualizeData(absolute);
-        // visualizeData(eeg);
+        // visualizeData(gyroscope);
 }
 
 void keyReleased() {
@@ -248,9 +246,13 @@ void keyReleased() {
 }
 
 boolean detect_nod() {
-    if (keyPressed && key == 'n')
+    if (keyPressed && key == 'n') // manually press 'N' on keyboard to continue
         return true;
-    // TODO Implement detect nod using gyro
+
+    if (nodded) {
+        nodded = false;
+        return true;
+    }
     return false;
 }
 
@@ -300,6 +302,7 @@ void changeState(int new_state) {
     state = new_state;
     state_start_time = curr_time;
     curr_clip = 0;
+    nodded = false;
 
     if (new_state == IDLE) {
         // audio_cue[state][0].play();
@@ -356,69 +359,18 @@ void oscEvent(OscMessage msg) {
     randomly_moving = true;
     getHeadbandStatus(msg);
 
-    if (state > FITTING && state < BCI)
-    getAbsolute(msg);
+        getGyroscope(msg);
+    if (state > FITTING && state < BCI) {
+        getAbsolute(msg);
+    }
 
     if (state > CALIBRATION)
         getScore(msg);
 }
 
-/* Meditation Visualization */
-// void visualize_meditation() {
-//     float _x = 0, x = 0, y = 0;
-//     float _y = Float.NaN;
-
-//     fill(0);
-//     stroke(0);
-//     background(255);
-//     for (int i = 0; i < beta_data_points; i++) {
-//         x = i + DIAGRAM_LEFT_LIMIT;
-
-//         if (Float.isNaN(beta[i]))
-//             y = Float.NaN;
-//         else
-//             y = diagram_bottom_y - beta[i] * RECT_HEIGHT * 2;
-
-//         // Only draw this line signment if there's  data
-//         if (!Float.isNaN(_y)) {
-//             line(_x, _y, x, y);
-//         }
-//         _x = x;
-//         _y = y;
-//     }
-
-//     line(DIAGRAM_LEFT_LIMIT, BASELINE_HEIGHT, DIAGRAM_LEFT_LIMIT + beta_data_points, BASELINE_HEIGHT);
-
-//     stroke(0);
-//     text((beta_upper_limit), DIAGRAM_LEFT_LIMIT, BASELINE_HEIGHT);
-//     if (beta_data_points > 0) text(beta[beta_data_points-1], x, y);
-//     text("0", x, diagram_bottom_y);
-
-//     stroke(COLORS[0]);
-//     fill(COLORS[0]);
-//     x = 0;
-//     y = 0;
-//     for (int i = 0; i < beta_data_points; i++) {
-//         x = i + DIAGRAM_LEFT_LIMIT;
-//         y = diagram_bottom_y - good[i] * 100;
-//         ellipse(x, y, 5, 5);
-//     }
-// }
-
 void collect_meditation(boolean has_beta_data) {
     if (!start_meditation) //  && beta_data_points >= beta.length Data array overflow
         return;
-    // good[beta_data_points] = is_good; // Collect is_good data for reference
-
-    // if (!has_beta_data)
-    //     beta[beta_data_points] = Float.NaN;
-    // else if (is_good <= 2)
-    //     beta[beta_data_points] = beta[beta_data_points-1]; // Use previous val
-    // else
-    //     beta[beta_data_points] = absolute[BETA];
-
-    // beta_data_points++;
-
     OscMessage data_msg = new OscMessage("Person0/data");
     data_msg.add(absolute[BETA]);
     data_msg.add(curr_clip);
@@ -548,10 +500,44 @@ void getScore(OscMessage msg) {
     get_elements_data(msg, "session_score", score);
 }
 
-/* Relative Band Power */
-// void getRelative(OscMessage msg) {
-//     get_elements_data(msg, "relative", relative);
-// }
+int gyro_threshold = 40; // How much do you need to move in order to trigger a "nod"
+/* Gyroscope data */
+void getGyroscope(OscMessage msg) {
+    if (msg.checkAddrPattern(muse_name + "/gyro")) {
+        // println(msg);
+        // for (int i = 0; i < 3; i++) {
+        //     if (msg.checkTypetag("fff"))
+        //         gyroscope[i] = msg.get(i).floatValue();
+        // }
+        float y = msg.get(1).floatValue();
+
+        switch (gyro_state) {
+            case 1: // Head up
+                if (y < 0) {
+                    gyro_state = 0;
+                    nodded = true;
+                    nod_counter = curr_time;
+                    println("Nodded~~~~~~");
+                }
+                break;
+            case -1: // Head down
+                if (y > gyro_threshold) {
+                    gyro_state = 1;
+                }
+                break;
+            case 0:
+            default :
+                if (y < -1 * gyro_threshold) {
+                    gyro_state = -1;
+                }
+                if (nod_counter > 0 && curr_time - nod_counter > 2) {
+                    nodded = false;
+                    nod_counter = 0;
+                }
+            break;
+        }
+    }
+}
 
 /* Get OSC data within the "elements" category */
 boolean get_elements_data(OscMessage msg, String element_name, float[] data_array) {
