@@ -10,9 +10,17 @@ final static boolean debugOSC = false;
 
 // OSC data streamming
 import oscP5.*;
-OscP5 oscP5;
+import netP5.*;
 final static String muse_name = "muse"; // "muse" default setting, "/muse" if via Muse Monitor app
 final static int recvPort = 8980;
+OscP5 oscP5;
+// To communicate with nodeJS server (visualization)
+final static NetAddress muse_manager_address = new NetAddress("127.0.0.1", 7980);
+
+// Time
+import java.util.Calendar;
+import java.util.TimeZone;
+Calendar calendar;
 
 // MACROS
 final static boolean MEDITATION_MODE = true; // "true" for mediation, "false" for clam detection mode
@@ -90,12 +98,11 @@ boolean randomly_moving = false;
 
 void setup_Muse_Reader() {
     oscP5 = new OscP5(this, recvPort);
+    calendar = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
+
     calibration_done = new SoundFile (this, "success.wav");
     skip_step = new SoundFile (this, "AudioCues/SKIP.wav");
 
-    // for (int i = 0; i < 5; i++) { audio_cue[i] = new audio_cue[]; }
-    // SoundFile s = new SoundFile (this, "AudioCues/Idle.wav");
-    // SoundFile[] x = new SoundFile[]{s};
     for (int i = 0; i < number_of_clips.length; i++) {
         audio_cue[i] = new SoundFile[number_of_clips[i]];
         for (int j = 0; j < number_of_clips[i]; j++) {
@@ -151,7 +158,7 @@ void draw_Muse_Reader() {
             // Do nothing if the audio is still playing
             if (audio_cue[state][curr_clip].isPlaying()) break;
             // If audio stopped:
-            switch (curr_clip % 3) {
+            switch (curr_clip % 3) { //<>//
                 case 0:
                     if (curr_clip == 0)
                         nextClip();
@@ -191,7 +198,7 @@ void draw_Muse_Reader() {
         default:
             break;
     }
-    println(audio_time, waiting_for_nod);
+    // println(audio_time, waiting_for_nod);
 
     if ((curr_time - state_start_time) % 5 == 0)
         randomly_moving = false;
@@ -260,6 +267,8 @@ void resetBrain() { // DEBUG
 }
 
 void changeState(int new_state) {
+    create_OSC_message(new_state); // Inform muse manager about new state
+
     // Old State
     if (state == CALIBRATION) {
         calibration_done.play();
@@ -407,6 +416,13 @@ void collect_meditation(boolean has_beta_data) {
         beta[beta_data_points] = absolute[BETA];
 
     beta_data_points++;
+
+    OscMessage data_msg = new OscMessage("Person0/data");
+    data_msg.add(absolute[BETA]);
+    data_msg.add(calendar.get(Calendar.MILLISECOND));
+    data_msg.add(is_good);
+
+    OSC_send(data_msg);
 }
 
 /* Visualization Bar Chart */
@@ -457,6 +473,8 @@ void reset_detection() {
 
 /* Headband Status Information (fitting precision) */
 void getHeadbandStatus(OscMessage msg) {
+    // OSC_send(msg);
+
     if (msg.checkAddrPattern(muse_name + "/elements/touching_forehead")
         && (msg.checkTypetag("i")))
     {
@@ -614,7 +632,29 @@ float get_OSC_value(OscMessage msg, int index) {
     return Float.NaN;
 }
 
+
+void create_OSC_message(int state) {
+  /* in the following different ways of creating osc messages are shown by example */
+  OscMessage myMessage = new OscMessage("Person0/state");
+
+  myMessage.add(state); /* add an int to the osc message */
+  // myMessage.add(12.34); /* add a float to the osc message */
+  // myMessage.add("some text"); /* add a string to the osc message */
+  // myMessage.add(new byte[] {0x00, 0x01, 0x10, 0x20}); /* add a byte blob to the osc message */
+  // myMessage.add(new int[] {1,2,3,4}); /* add an int array to the osc message */
+
+  /* send the message */
+  oscP5.send(myMessage, muse_manager_address);
+}
+
+void OSC_send(OscMessage msg) {
+  oscP5.send(msg, muse_manager_address);
+}
+
+
 /* Debug helper */
 void debugPrint(String s) {
     if (debug) print(s);
 }
+
+
