@@ -16,7 +16,7 @@
 </head>
 
 <body>
-    <div style="width:75%;">
+    <div style="width:90%;">
         <canvas id="canvas"></canvas>
     </div>
     <script>
@@ -29,45 +29,46 @@
                 labels: timestamps,
                 datasets: [
                 {
+                    label: 'Beta Brainwave',
+                    fill: false,
+                    pointRadius: 5,
+                    backgroundColor: window.chartColors.red,
+                    borderColor: window.chartColors.red,
+                    data: beta,
+                },
+                {
                     label: 'Alpha Brainwave',
-                    fill: 1,
-                    pointRadius: 0,
+                    fill: 0,
+                    // fill: 2,
+                    pointRadius: 5,
                     backgroundColor: utils.transparentize(presets.blue),
                     borderColor: window.chartColors.blue,
                     data: alpha,
                 },
                 {
-                    label: 'Beta Brainwave',
-                    fill: false,
-                    pointRadius: 0,
-                    backgroundColor: window.chartColors.red,
-                    borderColor: window.chartColors.red,
-                    data: beta,
+                 label: 'Dashed',
+                 fill: false,
+                 pointRadius: 5,
+                 backgroundColor: window.chartColors.red,
+                 borderColor: window.chartColors.red,
+                 borderDash: [5, 5],
+                 data: beta_dashed,
                 },
-                // {
-                //  label: 'Dashed',
-                //  fill: false,
-                //  pointRadius: 0,
-                //  backgroundColor: window.chartColors.green,
-                //  borderColor: window.chartColors.green,
-                //  borderDash: [5, 5],
-                //  data: [
-                //      randomScalingFactor(),
-                //      randomScalingFactor(),
-                //      randomScalingFactor(),
-                //      randomScalingFactor(),
-                //      randomScalingFactor(),
-                //      randomScalingFactor(),
-                //      randomScalingFactor()
-                //  ],
-                // },
                 {
                     label: 'Baseline',
                     fill: false,
-                    pointRadius: 0,
+                    pointRadius: 5,
                     backgroundColor: window.chartColors.grey,
                     borderColor: window.chartColors.grey,
                     data: baseline
+                },
+                {
+                 label: 'Filled',
+                 // fill: false,
+                 pointRadius: 5,
+                 backgroundColor: utils.transparentize(presets.green),
+                 borderColor: utils.transparentize(presets.green),
+                 data: beta_filled,
                 },
                 ]
             },
