@@ -89,6 +89,7 @@ int curr_time;
 int calm_start_time = -1;
 int state_start_time = -1;
 int calibration_time = -1;
+int milliseconds_start;
 
 // Visualization
 int last_reset_time = -1;    // Keep track of when the rest brain (position of neurons)
@@ -201,6 +202,7 @@ void draw_Muse_Reader() {
             if (!start_meditation && audio_cue[state][curr_clip].isPlaying()) {
                 state_start_time = curr_time;        // reset state start time
                 start_meditation = true;             // meditation starts
+                milliseconds_start = millis();
             }
         default:
             break;
@@ -236,7 +238,8 @@ void draw_Muse_Reader() {
 
 void keyReleased() {
     if (key == ENTER)
-        changeState(state + 1);
+        // changeState(state + 1);
+       changeState(state+1==STATES.length?0:state+1);
     else if (key == ' ') {
         good_connection[1] = !good_connection[1];
         good_connection[2] = !good_connection[2];
@@ -289,6 +292,11 @@ void changeState(int new_state) {
         // For visualizing meditation result
         diagram_bottom_y = BASELINE_HEIGHT + beta_upper_limit * RECT_HEIGHT * 2;
         println ("rect y = ", diagram_bottom_y);
+
+        // Send beta_upper_limit to BrainDiagram as a baseline of the diagram
+        OscMessage baseline_msg = new OscMessage("Person0/baseline");
+        baseline_msg.add(beta_upper_limit);
+        OSC_send(baseline_msg);
     }
     else if (state == BCI) {  // reset collected data
         beta_upper_limit = 0.3;
@@ -298,6 +306,7 @@ void changeState(int new_state) {
     }
 
     // Stop previous audio
+    println(state, curr_clip);
     if (state < number_of_clips.length && curr_clip < number_of_clips[state])
         audio_cue[state][curr_clip].stop();
 
@@ -374,11 +383,21 @@ void oscEvent(OscMessage msg) {
 void collect_meditation(boolean has_beta_data) {
     if (!start_meditation) //  && beta_data_points >= beta.length Data array overflow
         return;
-    OscMessage data_msg = new OscMessage("Person0/data");
-    data_msg.add(absolute[BETA]);
-    data_msg.add(curr_clip);
-    data_msg.add(is_good);
+    int timestamp = (millis() - milliseconds_start) / 100; // Precision set to 0.1 seconds
+    // Get rid of duplicate data
+    // if (eeg[BETA] == prev_eeg)
+    //     return;
 
+    OscMessage data_msg = new OscMessage("Person0/data/beta");
+    data_msg.add(absolute[BETA]);
+    data_msg.add(timestamp);
+    data_msg.add(is_good);
+    OSC_send(data_msg);
+
+    data_msg = new OscMessage("Person0/data/alpha");
+    data_msg.add(absolute[ALPHA]);
+    data_msg.add(timestamp);
+    data_msg.add(is_good);
     OSC_send(data_msg);
 }
 
