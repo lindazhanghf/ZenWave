@@ -2,8 +2,9 @@
     "name": "MuseManager",
     "version": "0.1",
     "dependencies": {
-        "node-osc": "^2.1.0",
         "chart.js": "^2.7.3",
-        "node-static": "^0.7.11"
+        "node-osc": "^2.1.0",
+        "node-static": "^0.7.11",
+        "reload": "^2.3.1"
     }
 }

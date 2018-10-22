@@ -29,10 +29,11 @@ function Muse(name) {
     m.state = -1;
 
     m.connection_info = [0, 0, 0, 0];
-    m.baseline = 0;
-    m.baseline_array = [];
-    m.data = [muse_data(), muse_data()];
-    m.timestamps = [];
+    reset_data(m);
+    // m.baseline = 0;
+    // m.baseline_array = [];
+    // m.data = [muse_data(), muse_data()];
+    // m.timestamps = [];
     return m;
 }
 
@@ -58,7 +59,8 @@ function parse(muse, msg) {
             write_data(muse);
         }
     } else if (msg[0].includes("data/baseline")) {
-        muse.baseline = 0.85;
+        muse.baseline = msg[1];
+        // muse.baseline = 0.85;
         console.log("Beta baseline = " + muse.baseline);
     }
     else if (muse.state == 4) {
@@ -71,6 +73,7 @@ function parse(muse, msg) {
                 && beta.array_dashed[beta.array_dashed.length-1].y < muse.baseline) {
                 let d = {x:msg[2]/100, y:beta.array_dashed[beta.array_dashed.length-1].y};
                 beta.array_filled.push(d);
+                muse.num_relaxed++;
             }
 
             else
@@ -89,6 +92,7 @@ function save_data(muse_data, msg) {
         muse_data.array.push({x: msg[2]/100, y: msg[1]});
     } else {
         muse_data.array.push({x: msg[2]/100, y: NaN});
+        muse.num_moving++;
     }
 
     muse_data.array_dashed.push({x: msg[2]/100, y: msg[1]});
@@ -97,7 +101,7 @@ function save_data(muse_data, msg) {
 
 function write_data(muse) {
     let content = "";
-    content += "var timestamps = " + JSON.stringify(muse.timestamps) + ";\n";
+    // content += "var timestamps = " + JSON.stringify(muse.timestamps) + ";\n";
     content += "var baseline = " + JSON.stringify(muse.baseline_array) + ";\n";
     let alpha = muse.data[0];
     content += "var alpha = " + JSON.stringify(alpha.array) + ";\n";
@@ -106,6 +110,8 @@ function write_data(muse) {
     content += "var beta = " + JSON.stringify(beta.array) + ";\n";
     content += "var beta_dashed = " + JSON.stringify(beta.array_dashed) + ";\n";
     content += "var beta_filled = " + JSON.stringify(beta.array_filled) + ";\n";
+    let num_alert = beta.array.length - muse.num_moving - muse.num_relaxed;
+    content += "var result = " + JSON.stringify([muse.num_relaxed, num_alert]) + ";\n";
 
     // write to a file named data.js to be used by html to display data
     fs.writeFile('public/data.js', content, (err) => {
@@ -114,6 +120,14 @@ function write_data(muse) {
         return true;
     });
     return false; // fail to write file
+}
+
+function reset_data(muse) {
+    muse.baseline = 0;
+    muse.baseline_array = [];
+    muse.data = [muse_data(), muse_data()];
+    muse.num_moving = 0;
+    muse.num_relaxed = 0;
 }
 
 function muse_data() {
