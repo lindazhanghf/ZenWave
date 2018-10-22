@@ -26,46 +26,55 @@
             type: 'line',
             data: {
                 // labels: ['January', 'February', 'March', 'April', 'May', 'June', 'July'],
-                labels: timestamps,
+                // labels: timestamps,
                 datasets: [
                 {
                     label: 'Beta Brainwave',
                     fill: false,
-                    pointRadius: 5,
+                    pointRadius: 0,
                     backgroundColor: window.chartColors.red,
                     borderColor: window.chartColors.red,
                     data: beta,
                 },
                 {
                     label: 'Alpha Brainwave',
-                    fill: 0,
-                    // fill: 2,
-                    pointRadius: 5,
+                    // fill: 0,
+                    fill: false,
+                    pointRadius: 0,
                     backgroundColor: utils.transparentize(presets.blue),
                     borderColor: window.chartColors.blue,
                     data: alpha,
                 },
                 {
-                 label: 'Dashed',
-                 fill: false,
-                 pointRadius: 5,
-                 backgroundColor: window.chartColors.red,
-                 borderColor: window.chartColors.red,
-                 borderDash: [5, 5],
-                 data: beta_dashed,
+                     label: 'Beta',
+                     fill: false,
+                     pointRadius: 0,
+                     backgroundColor: window.chartColors.red,
+                     borderColor: window.chartColors.red,
+                     borderDash: [2, 2],
+                     data: beta_dashed,
                 },
+                // {
+                //      label: '∂',
+                //      fill: false,
+                //      pointRadius: 0,
+                //      backgroundColor: window.chartColors.blue,
+                //      borderColor: window.chartColors.blue,
+                //      borderDash: [5, 5],
+                //      data: alpha_dashed,
+                // },
                 {
                     label: 'Baseline',
                     fill: false,
-                    pointRadius: 5,
+                    pointRadius: 0,
                     backgroundColor: window.chartColors.grey,
                     borderColor: window.chartColors.grey,
                     data: baseline
                 },
                 {
                  label: 'Filled',
-                 // fill: false,
-                 pointRadius: 5,
+                 // fill: 1, // Uncomment this line to fill up to Alpha
+                 pointRadius: 0,
                  backgroundColor: utils.transparentize(presets.green),
                  borderColor: utils.transparentize(presets.green),
                  data: beta_filled,
@@ -86,19 +95,36 @@
                     mode: 'nearest',
                     intersect: true
                 },
+                legend: {
+                    display: true,
+                    // labels: {
+                    //     fontColor: 'rgb(255, 99, 132)'
+                    // }
+                },
                 scales: {
                     xAxes: [{
                         display: true,
                         scaleLabel: {
                             display: true,
-                            labelString: 'Time (seconds'
+                            labelString: 'Time (seconds)'
                         },
-                    ticks: {
-                       userCallback: function(item, index) {
-                          if (item == Math.round(item)) return item;
-                       },
-                       autoSkip: false
-                    }
+                        // ticks: {
+                        //    // userCallback: function(item, index) {
+                        //    //    if (item == Math.round(item)) return item;
+                        //    // },
+                        //    autoSkip: true,
+                        //    autoSkipPadding: 30
+                        //    // beginAtZero: true,
+                        //    // min: 0,
+                        //    // max: 60,
+                        //    // step: 1,
+                        //    // precision: 0
+                        // }
+                        type: "linear",
+                        ticks: {
+                            min: 0,
+                            max: 60
+                        }
                     }],
                     yAxes: [{
                         display: true,

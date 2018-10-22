@@ -67,15 +67,18 @@ function parse(muse, msg) {
         if (msg[0].includes("data/alpha")) {
             save_data(alpha, msg);
 
-            if (beta.array_dashed[beta.array_dashed.length-1] < msg[1] //alpha.array_dashed[alpha.array_dashed.length-1]
-                && beta.array_dashed[beta.array_dashed.length-1] < muse.baseline)
-                beta.array_filled.push(beta.array_dashed[beta.array_dashed.length-1]);
+            if (beta.array_dashed[beta.array_dashed.length-1].y < msg[1] //alpha.array_dashed[alpha.array_dashed.length-1].y
+                && beta.array_dashed[beta.array_dashed.length-1].y < muse.baseline) {
+                let d = {x:msg[2]/100, y:beta.array_dashed[beta.array_dashed.length-1].y};
+                beta.array_filled.push(d);
+            }
+
             else
-                beta.array_filled.push(NaN);
+                beta.array_filled.push({x: msg[2]/100, y: NaN});
         } else if (msg[0].includes("data/beta")) {
             save_data(beta, msg);
-            muse.timestamps.push(msg[2]/10); // In seconds
-            muse.baseline_array.push(muse.baseline);
+            // muse.timestamps.push(msg[2]/100); // In seconds
+            muse.baseline_array.push({x: msg[2]/100, y: muse.baseline});
         }
     }
 }
@@ -83,12 +86,13 @@ function parse(muse, msg) {
 /* Data osc message format: data, timestamp, is_good */
 function save_data(muse_data, msg) {
     if ((msg[3]) > 2) {
-        muse_data.array.push(msg[1]);
+        muse_data.array.push({x: msg[2]/100, y: msg[1]});
     } else {
-        muse_data.array.push(NaN);
+        muse_data.array.push({x: msg[2]/100, y: NaN});
     }
 
-    muse_data.array_dashed.push(msg[1]);
+    muse_data.array_dashed.push({x: msg[2]/100, y: msg[1]});
+    console.log("Save data - ", msg[1]);
 }
 
 function write_data(muse) {
