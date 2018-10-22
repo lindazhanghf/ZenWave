@@ -118,6 +118,7 @@ void setup_Muse_Reader() {
 void draw_Muse_Reader() {
     curr_time = current_time();
     fill(0);
+    // println(state);
 
     // State Machine
     switch (state) {
@@ -125,8 +126,10 @@ void draw_Muse_Reader() {
             if ((curr_time - state_start_time - 1) % 8 == 0)
                 play_audio(curr_clip);
 
-            if ((curr_time - state_start_time - 1) % 16 == 0)
+            if ((curr_time - state_start_time - 1) % 16 == 0) {
                 resetBrain();
+                state_start_time--;
+            }
             break;
         case 1:
             if ((curr_time - state_start_time) > 2 && good_connection[1] && good_connection[2]) { // Sensors at the ears not fitted correctly
@@ -272,7 +275,7 @@ void resetBrain() { // DEBUG
 }
 
 void changeState(int new_state) {
-    create_OSC_message(new_state); // Inform muse manager about new state
+    OSC_send_state(new_state); // Inform muse manager about new state
 
     // Old State
     if (state == CALIBRATION) {
@@ -621,7 +624,7 @@ float get_OSC_value(OscMessage msg, int index) {
 }
 
 
-void create_OSC_message(int state) {
+void OSC_send_state(int state) {
   /* in the following different ways of creating osc messages are shown by example */
   OscMessage myMessage = new OscMessage("Person0/state");
   myMessage.add(state); /* add an int to the osc message */

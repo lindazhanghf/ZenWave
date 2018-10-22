@@ -167,8 +167,9 @@ void idleReset() {
 
     }
 
-    println("Reset Neurons");
     idleChange = false;
+
+    println("Reset Neurons");
 
     for(int i = 0;i<n.length;i++) {
       n[i].makeSynapse();
