@@ -69,19 +69,20 @@ function parse(muse, msg) {
         if (msg[0].includes("data/alpha")) {
             save_data(alpha, msg);
 
-            if (beta.array_dashed[beta.array_dashed.length-1].y < msg[1] //alpha.array_dashed[alpha.array_dashed.length-1].y
-                && beta.array_dashed[beta.array_dashed.length-1].y < muse.baseline) {
-                let d = {x:msg[2]/100, y:beta.array_dashed[beta.array_dashed.length-1].y};
+            let last_data = beta.array[beta.array.length-1].y;
+            if (last_data != NaN && last_data < msg[1] && last_data < muse.baseline) {
+                let d = {x:msg[2]/1000, y:last_data};
                 beta.array_filled.push(d);
                 muse.num_relaxed++;
             }
-
+            else if (last_data != NaN)
+                muse.num_alert++;
             else
-                beta.array_filled.push({x: msg[2]/100, y: NaN});
+                beta.array_filled.push({x: msg[2]/1000, y: NaN});
         } else if (msg[0].includes("data/beta")) {
             save_data(beta, msg);
-            // muse.timestamps.push(msg[2]/100); // In seconds
-            muse.baseline_array.push({x: msg[2]/100, y: muse.baseline});
+            // muse.timestamps.push(msg[2]/1000); // In seconds
+            muse.baseline_array.push({x: msg[2]/1000, y: muse.baseline});
         }
     }
 }
@@ -89,13 +90,13 @@ function parse(muse, msg) {
 /* Data osc message format: data, timestamp, is_good */
 function save_data(muse_data, msg) {
     if ((msg[3]) > 2) {
-        muse_data.array.push({x: msg[2]/100, y: msg[1]});
+        muse_data.array.push({x: msg[2]/1000, y: msg[1]});
     } else {
-        muse_data.array.push({x: msg[2]/100, y: NaN});
-        muse.num_moving++;
+        muse_data.array.push({x: msg[2]/1000, y: NaN});
+        // muse.num_moving++;
     }
 
-    muse_data.array_dashed.push({x: msg[2]/100, y: msg[1]});
+    muse_data.array_dashed.push({x: msg[2]/1000, y: msg[1]});
     console.log("Save data - ", msg[1]);
 }
 
@@ -110,8 +111,8 @@ function write_data(muse) {
     content += "var beta = " + JSON.stringify(beta.array) + ";\n";
     content += "var beta_dashed = " + JSON.stringify(beta.array_dashed) + ";\n";
     content += "var beta_filled = " + JSON.stringify(beta.array_filled) + ";\n";
-    let num_alert = beta.array.length - muse.num_moving - muse.num_relaxed;
-    content += "var result = " + JSON.stringify([muse.num_relaxed, num_alert]) + ";\n";
+    let valid_data = (muse.num_alert + muse.num_relaxed) * 100; // To calculate percentage [Meditation Result]
+    content += "var result = " + JSON.stringify([muse.num_relaxed/valid_data, num_alert/valid_data]) + ";\n";
 
     // write to a file named data.js to be used by html to display data
     fs.writeFile('public/data.js', content, (err) => {
@@ -126,7 +127,7 @@ function reset_data(muse) {
     muse.baseline = 0;
     muse.baseline_array = [];
     muse.data = [muse_data(), muse_data()];
-    muse.num_moving = 0;
+    muse.num_alert = 0;
     muse.num_relaxed = 0;
 }
 
