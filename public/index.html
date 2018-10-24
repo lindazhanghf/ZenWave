@@ -6,6 +6,7 @@
         <script src="modules/chart.js/Chart.bundle.js"></script>
         <script src="modules/chart.js/utils.js"></script>
         <script src="reload/reload.js"></script>
+        <script src="modules/socket.io/socket.io.js"></script>
         <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
         <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
         <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css" integrity="  sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO" crossorigin="anonymous">
@@ -21,21 +22,21 @@
 
 <body style="background-color: #2F353A">
     <div class="container-fluid"><div class="row">
-        <div class=" col-sm-6"><div class="panel">
+        <div class=" col-md-6"><div class="panel">
             <p class="title" style="font">MEDITATION RESULT</p>
             <canvas id="doughnut_chart"></canvas>
         </div></div>
-        <div class=" col-sm-6"><div class="panel">
+        <div class=" col-md-6"><div class="panel">
             <p class="title" style="font">MEDITATION DATA</p>
             <canvas id="line_chart"></canvas>
         </div></div>
-        <div class="headband-black col-sm-6"><div class="panel">
+        <div class="headband-black col-md-6"><div class="panel">
             <p class="small-title" style="font">#1 headband </p>
-            <canvas class="muse-canvas" id="canvas-black"></canvas>
+            <canvas class="muse-canvas"  width="600" height="414" id="canvas-black"></canvas>
         </div></div>
-        <div class="headband-white col-sm-6"><div class="panel">
+        <div class="headband-white col-md-6"><div class="panel">
             <p class="small-title" style="font">#2 headband</p>
-            <canvas class="muse-canvas" id="canvas-white"></canvas>
+            <canvas class="muse-canvas"  width="600" height="414" id="canvas-white"></canvas>
         </div></div>
     </div></div>
     <script>
@@ -194,7 +195,7 @@
                 tooltips: {
                     callbacks: {
                       label: function(tooltipItem, data) {
-                          return data.datasets[tooltipItem.datasetIndex].data[tooltipItem.index] + "%";
+                          return " " + data.datasets[tooltipItem.datasetIndex].data[tooltipItem.index] + " %";
                         }
                     }
 
@@ -209,26 +210,68 @@
             window.myLine = new Chart(ctx, line_chart_config);
         };
 
-        var canvas_black = document.getElementById('canvas-black');
-        // canvas_black.width = 900;
-        var context_black = canvas_black.getContext('2d');
-        var image_black = new Image();
-        image_black.onload = function() {
-            let width = 350;
-            let height = 100;
-            context_black.drawImage(image_black, 0, 0, width, height);// image_black.width/6, image_black.height/6);
-        };
-        image_black.src = 'images/Muse_black.png';
-        var canvas_white = document.getElementById('canvas-white');
-        var context_white = canvas_white.getContext('2d');
-        var image_white = new Image();
-        image_white.onload = function() {
-            let width = 300;
-            let height = 207;
-            context_white.drawImage(image_white, 0, 0, width, height);// image_white.width/6, image_white.height/6);
-        };
-        image_white.src = 'images/Muse_white.png';
+        // var connection_muse_black = [1, 2, 2, 1]
+        // var connection_muse_white = [0, 2, 2, 0]
 
+        /* Muse Manager */
+        var socket = io('http://127.0.0.1:8888');
+        socket.on('connect',function() {
+          console.log('Client has connected to the server!');
+        });
+        // var connection_muse_black = [0, 0, 0, 0];
+        // var connection_muse_white = [0, 0, 0, 0];
+        socket.on('Muse_black_connection', function (data) {
+            console.log("Muse black:" , data);
+            // connection_muse_black = data;
+            // draw_connection_info(context_black, image_black, connection_muse_black);
+            draw_connection_info(context_black, image_black, data);
+          });
+        socket.on('Muse_white_connection', function (data) {
+            console.log("Muse white:" , data);
+            // connection_muse_white = data;
+            draw_connection_info(context_white, image_white, data);
+          });
+
+        // black headband
+        var context_black = document.getElementById('canvas-black').getContext('2d');
+        var image_black = new Image();
+        image_black.src = 'images/Muse_black.png';
+        image_black.onload = function() {
+            let width = 600;
+            let height = 414;
+            context_black.drawImage(image_black, 0, 0, width, height);
+        };
+
+        // white headband
+        var context_white = document.getElementById('canvas-white').getContext('2d');
+        var image_white = new Image();
+        image_white.src = 'images/Muse_white.png';
+        image_white.onload = function() {
+            let width = 600;
+            let height = 414;
+            context_white.drawImage(image_white, 0, 0, width, height);
+        };
+
+        const connection_colors = ['rgba(231, 60, 30, 0.2)', 'rgba(231, 60, 30, 0.5)' , 'rgba(46, 204, 113, 0.4)']
+        const area = [
+                [{x:50, y:142}, {x:75, y:175}, {x:120, y:330}, {x:115, y:330}],
+                [{x:158, y:38}, {x:265, y:30}, {x:260, y:65}, {x:155, y:74}],
+                [{x:622-265, y:30}, {x:622-158, y:38}, {x:622-155, y:74}, {x:622-260, y:65}],
+                [{x:619-75, y:175}, {x:619-50, y:142}, {x:619-115, y:330}, {x:619-120, y:330}],
+            ];
+        function draw_connection_info(ctx, muse_image, connection_info) {
+            ctx.drawImage(muse_image, 0, 0, 600, 414);
+            for (var i = 0; i < area.length; i++) {
+                ctx.fillStyle = connection_colors[connection_info[i]];
+                ctx.beginPath();
+                ctx.moveTo(area[i][0].x, area[i][0].y)
+                ctx.lineTo(area[i][1].x, area[i][1].y)
+                ctx.lineTo(area[i][2].x, area[i][2].y)
+                ctx.lineTo(area[i][3].x, area[i][3].y)
+                ctx.closePath();
+                ctx.fill();
+            }
+        }
     </script>
 </body>
 
