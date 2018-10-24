@@ -1,11 +1,11 @@
 <!doctype html>
 <html>
-
 <head>
     <title>Brain Diagram</title>
         <script src="data.js"></script>
         <script src="modules/chart.js/Chart.bundle.js"></script>
         <script src="modules/chart.js/utils.js"></script>
+        <script src="reload/reload.js"></script>
         <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
         <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
         <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css" integrity="  sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO" crossorigin="anonymous">
@@ -28,6 +28,14 @@
         <div class=" col-sm-6"><div class="panel">
             <p class="title" style="font">MEDITATION DATA</p>
             <canvas id="line_chart"></canvas>
+        </div></div>
+        <div class="headband-black col-sm-6"><div class="panel">
+            <p class="small-title" style="font">#1 headband </p>
+            <canvas class="muse-canvas" id="canvas-black"></canvas>
+        </div></div>
+        <div class="headband-white col-sm-6"><div class="panel">
+            <p class="small-title" style="font">#2 headband</p>
+            <canvas class="muse-canvas" id="canvas-white"></canvas>
         </div></div>
     </div></div>
     <script>
@@ -200,6 +208,27 @@
             ctx = document.getElementById('line_chart').getContext('2d');
             window.myLine = new Chart(ctx, line_chart_config);
         };
+
+        var canvas_black = document.getElementById('canvas-black');
+        // canvas_black.width = 900;
+        var context_black = canvas_black.getContext('2d');
+        var image_black = new Image();
+        image_black.onload = function() {
+            let width = 350;
+            let height = 100;
+            context_black.drawImage(image_black, 0, 0, width, height);// image_black.width/6, image_black.height/6);
+        };
+        image_black.src = 'images/Muse_black.png';
+        var canvas_white = document.getElementById('canvas-white');
+        var context_white = canvas_white.getContext('2d');
+        var image_white = new Image();
+        image_white.onload = function() {
+            let width = 300;
+            let height = 207;
+            context_white.drawImage(image_white, 0, 0, width, height);// image_white.width/6, image_white.height/6);
+        };
+        image_white.src = 'images/Muse_white.png';
+
     </script>
 </body>
 

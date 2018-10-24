@@ -1,15 +1,31 @@
-var static = require('node-static');
+// var static = require('node-static');
 var fs = require('fs');
-var fileServer = new static.Server('./public');
-
-require('http').createServer(function (request, response) {
-    request.addListener('end', function () {
-        fileServer.serve(request, response);
-    }).resume();
-}).listen(8080);
+// var fileServer = new static.Server('./public');
+var express = require('express')
+var http = require('http')
+const { exec } = require('child_process');
+// require('http').createServer(function (request, response) {
+//     request.addListener('end', function () {
+//         fileServer.serve(request, response);
+//     }).resume();
+// }).listen(8080);
 
 var osc = require('node-osc');
 var oscServer = new osc.Server(7980, '0.0.0.0');
+exec('/Users/linzhang3/Documents/BrainDiagram/node_modules/reload/bin/reload -p 3000 -d /Users/linzhang3/Documents/BrainDiagram/public/')
+
+// var app = express()
+// reload(app);
+
+// app.set('port', process.env.PORT || 3000)
+// app.use(express.static('./public'));
+// var server = http.createServer(app)
+
+// // Reload code here
+
+// server.listen(app.get('port'), function () {
+//   console.log('Web server listening on port ' + app.get('port'))
+// });
 
 var state_name = ["IDLE", "FITTING", "CALIBRATION", "EXPLAINATION", "MEDITATION", "BCI", "DETECTION"];
 var IDLE = 0;           // Headband not on

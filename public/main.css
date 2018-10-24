@@ -10,15 +10,26 @@
 	padding-top: 0.5em;
 }
 
+.small-title {
+	font-family: 'Montserrat', sans-serif;
+	font-size: 1em;
+	font-weight: 300;
+	font-weight: 'light';
+	color: #4da4aa;
+	text-align: center;
+	padding-top: 0.5em;
+}
+
 .panel {
 	background-color: #252525;
 	margin-top: 1em;
 	margin-bottom: 1em;
 	margin-left: 0.5em;
 	margin-right: 0.5em;
-
+	padding-bottom: 1em;
 }
 
-canvas {
-	padding-bottom: 1em;
+.muse-canvas {
+   width: 300px;
+   height: 300px;
 }
