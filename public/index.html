@@ -21,12 +21,12 @@
 </head>
 
 <body style="background-color: #2F353A">
-    <div class="container-fluid"><div class="row">
-        <div class=" col-md-5"><div class="panel">
+<!--     <div class="container-fluid"><div class="row">
+        <div class="col-md-5"><div class="panel">
             <p class="title" style="font">MEDITATION RESULT</p>
             <canvas  id="doughnut_chart"></canvas>
         </div></div>
-        <div class=" col-md-7"><div class="panel">
+        <div class="col-md-7"><div class="panel">
             <p class="title" style="font">MEDITATION DATA</p>
             <canvas style="width:554px;height:277px" id="line_chart"></canvas>
         </div></div>
@@ -44,6 +44,34 @@
             </div>
         </div></div>
     </div></div>
+ -->
+    <div class="container-fluid"><div class="row">
+        <div class="col-md-5"><div class="panel" style="height:auto;padding-top: 15.5em;padding-bottom: 18em">
+            <p class="title" style="font">MEDITATION RESULT</p>
+            <div>
+                <canvas style="height:auto" id="doughnut_chart"></canvas>
+            </div>
+        </div></div>
+        <div class="col-md-7">
+            <div class="panel" style="height:auto">
+            <p class="title" style="font">MEDITATION DATA</p>
+            <canvas id="line_chart"></canvas>
+            </div>
+            <div class="panel container-fluid row" style="height:400px">
+                <div class="col-md-6">
+                    <p class="small-title" style="font">#1 headband </p>
+                    <canvas class="muse-canvas"  width="600" height="414" id="canvas-black"></canvas>
+                    <p class="white-text" id="state-black" style="font">State: Idle</p>
+                </div><div class="col-md-6">
+                    <p class="small-title" style="font">#2 headband</p>
+                    <canvas class="muse-canvas"  width="600" height="414" id="canvas-white"></canvas>
+                    <p class="white-text" id="state-white" style="font">State: Idle</p>
+                </div>
+
+            </div>
+        </div>
+    </div></div>
+
     <script>
         let transparent_color = '#252525'; // Background color
         let color_dark_blue = "#12575a";
@@ -104,7 +132,6 @@
             options: {
                 responsive: true,
                 title: {
-                    // fontSize: 30,
                     fontColor: '#4da4aa',
                     display: false,
                     text: 'Meditation Data'
@@ -116,7 +143,13 @@
                         if (tooltipItem.datasetIndex > 2)
                             return false;
                         return true;
-                   }
+                    },
+                    callbacks: {
+                      label: function(tooltipItem, data) {
+                          let number = data.datasets[tooltipItem.datasetIndex].data[tooltipItem.index].y;
+                          return data.datasets[tooltipItem.datasetIndex].label + ": " + Math.round(number*1000)/1000;
+                        }
+                    },
                 },
                 hover: {
                     mode: 'nearest',
@@ -185,8 +218,17 @@
             },
             options: {
                 responsive: true,
+                layout: {
+                    padding: {
+                        left: 0,
+                        right: 0,
+                        top: 0,
+                        bottom: 0
+                    }
+                },
                 legend: {
                     position: 'top',
+                    reverse: true,
                 },
                 title: {
                     fontColor: '#4da4aa',
@@ -260,7 +302,7 @@
             draw_connection_info(context_white, image_white, data);
           });
 
-        const connection_colors = ['rgba(231, 60, 30, 0.2)', 'rgba(231, 60, 30, 0.5)' , 'rgba(46, 204, 113, 0.4)']
+        const connection_colors = ['rgba(231, 60, 30, 0.2)', 'rgba(231, 60, 30, 0.5)' , 'rgba(46, 204, 113, 0.5)']
         const area = [
                 [{x:50, y:142}, {x:75, y:175}, {x:120, y:330}, {x:115, y:330}],
                 [{x:158, y:38}, {x:265, y:30}, {x:260, y:65}, {x:155, y:74}],
@@ -268,6 +310,7 @@
                 [{x:619-75, y:175}, {x:619-50, y:142}, {x:619-115, y:330}, {x:619-120, y:330}],
             ];
         function draw_connection_info(ctx, muse_image, connection_info) {
+            ctx.clearRect(0, 0, 600, 414);
             ctx.drawImage(muse_image, 0, 0, 600, 414);
             for (var i = 0; i < area.length; i++) {
                 ctx.fillStyle = connection_colors[connection_info[i]];
