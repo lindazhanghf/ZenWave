@@ -22,21 +22,26 @@
 
 <body style="background-color: #2F353A">
     <div class="container-fluid"><div class="row">
-        <div class=" col-md-6"><div class="panel">
+        <div class=" col-md-5"><div class="panel">
             <p class="title" style="font">MEDITATION RESULT</p>
-            <canvas id="doughnut_chart"></canvas>
+            <canvas  id="doughnut_chart"></canvas>
         </div></div>
-        <div class=" col-md-6"><div class="panel">
+        <div class=" col-md-7"><div class="panel">
             <p class="title" style="font">MEDITATION DATA</p>
-            <canvas id="line_chart"></canvas>
+            <canvas style="width:554px;height:277px" id="line_chart"></canvas>
         </div></div>
-        <div class="headband-black col-md-6"><div class="panel">
-            <p class="small-title" style="font">#1 headband </p>
-            <canvas class="muse-canvas"  width="600" height="414" id="canvas-black"></canvas>
+        <div class="headband-black col-md-5"><div class="panel">
         </div></div>
-        <div class="headband-white col-md-6"><div class="panel">
-            <p class="small-title" style="font">#2 headband</p>
-            <canvas class="muse-canvas"  width="600" height="414" id="canvas-white"></canvas>
+        <div class="headband-white col-md-7 "><div class="panel container-fluid row" >
+            <div class="col-md-6">
+                <p class="small-title" style="font">#1 headband </p>
+                <canvas class="muse-canvas"  width="600" height="414" id="canvas-black"></canvas>
+                <p class="white-text" id="state-black" style="font">State: Idle</p>
+            </div><div class="col-md-6">
+                <p class="small-title" style="font">#2 headband</p>
+                <canvas class="muse-canvas"  width="600" height="414" id="canvas-white"></canvas>
+                <p class="white-text" id="state-white" style="font">State: Idle</p>
+            </div>
         </div></div>
     </div></div>
     <script>
@@ -214,24 +219,11 @@
         // var connection_muse_white = [0, 2, 2, 0]
 
         /* Muse Manager */
+        const state_name = ["idle", "fitting", "calibration", "tutorial", "meditation", "bci", "detection"];
         var socket = io('http://127.0.0.1:8888');
         socket.on('connect',function() {
           console.log('Client has connected to the server!');
         });
-        // var connection_muse_black = [0, 0, 0, 0];
-        // var connection_muse_white = [0, 0, 0, 0];
-        socket.on('Muse_black_connection', function (data) {
-            console.log("Muse black:" , data);
-            // connection_muse_black = data;
-            // draw_connection_info(context_black, image_black, connection_muse_black);
-            draw_connection_info(context_black, image_black, data);
-          });
-        socket.on('Muse_white_connection', function (data) {
-            console.log("Muse white:" , data);
-            // connection_muse_white = data;
-            draw_connection_info(context_white, image_white, data);
-          });
-
         // black headband
         var context_black = document.getElementById('canvas-black').getContext('2d');
         var image_black = new Image();
@@ -241,6 +233,14 @@
             let height = 414;
             context_black.drawImage(image_black, 0, 0, width, height);
         };
+        socket.on('Muse_black_state', function (data) {
+            console.log("Muse black state:" , data);
+            document.getElementById('state-black').innerHTML = "State: " + state_name[data];
+          });
+        socket.on('Muse_black_connection', function (data) {
+            console.log("Muse black:" , data);
+            draw_connection_info(context_black, image_black, data);
+          });
 
         // white headband
         var context_white = document.getElementById('canvas-white').getContext('2d');
@@ -251,6 +251,14 @@
             let height = 414;
             context_white.drawImage(image_white, 0, 0, width, height);
         };
+        socket.on('Muse_white_state', function (data) {
+            console.log("Muse white state:" , data);
+            document.getElementById('state-white').innerHTML = "State: " + state_name[data];
+          });
+        socket.on('Muse_white_connection', function (data) {
+            console.log("Muse white:" , data);
+            draw_connection_info(context_white, image_white, data);
+          });
 
         const connection_colors = ['rgba(231, 60, 30, 0.2)', 'rgba(231, 60, 30, 0.5)' , 'rgba(46, 204, 113, 0.4)']
         const area = [

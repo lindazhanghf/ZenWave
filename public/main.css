@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css?family=Montserrat:300,400');
+@import url('https://fonts.googleapis.com/css?family=Montserrat:200,300');
 
 .title {
 	font-family: 'Montserrat', sans-serif;
@@ -30,13 +30,17 @@
 	padding-bottom: 1em;
 }
 
-/*.muse-canvas {
-   width: 300px;
-   height: 300px;
-}
-*/
 .muse-canvas {
-  width: 50%;
-  /*height: 80%;*/
+  width: 90%;
   height: auto;
+}
+
+.white-text {
+	font-family: 'Montserrat', sans-serif;
+	font-size: 1em;
+	font-weight: 200;
+	/*font-weight: 'extra-light';*/
+	color: #fff;
+	text-align: center;
+	padding-top: 0.5em;
 }

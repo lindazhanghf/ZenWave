@@ -51,6 +51,7 @@ function parse(muse, msg) {
     if (msg[0].includes("state")) {
         muse.state = msg[1];
         console.log(muse.prefix + " enters state " + state_name[muse.state]);
+        io.emit(muse.prefix+'_state', muse.state);
 
         if (muse.state == CALIBRATION) {
             muse.data = [muse_data(), muse_data()]; // reset data
