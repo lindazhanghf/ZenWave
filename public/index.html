@@ -235,7 +235,7 @@
 
         /* Muse Manager */
         const muse = ["Muse_black", "Muse_white"];
-        const state_name = ["idle", "fitting", "calibration", "tutorial", "meditation", "bci", "detection"];
+        const state_name = ["idle", "fitting", "calibration", "tutorial", "meditation", "result", "end"];
         var socket = io('http://127.0.0.1:8888');
         socket.on('connect',function() {
           console.log('Client has connected to the server!');
@@ -259,6 +259,7 @@
             let width = 600;
             let height = 414;
             context_black.drawImage(image_black, 0, 0, width, height);
+            // draw_connection_info(context_black, Muse_black_connection);
         };
         socket.on('Muse_black_state', function (data) {
             // console.log("Muse black state:" , data);
@@ -277,6 +278,7 @@
             let width = 600;
             let height = 414;
             context_white.drawImage(image_white, 0, 0, width, height);
+            // draw_connection_info(context_white, Muse_white_connection);
         };
         socket.on('Muse_white_state', function (data) {
             // console.log("Muse white state:" , data);
