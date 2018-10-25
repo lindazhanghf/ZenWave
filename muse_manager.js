@@ -26,7 +26,7 @@ const MEDITATION = 4;     // IF Meditation Mode
 const BCI = 5;            // Final state after "flipped"
 
 var muse_black = Muse("Muse_black", "Muse_black");  // Make sure its the same as in Muse_Manager
-var muse_white = Muse("/Muse", "Muse_white");       // Make sure its the same as in Muse_Manager
+var muse_white = Muse("/muse", "Muse_white");       // Make sure its the same as in Muse_Manager
 // var in_use = null;
 
 function Muse(address, prefix) {
@@ -56,13 +56,15 @@ function parse(muse, msg) {
         io.emit(muse.prefix+'_state', muse.state);
 
         if (muse.state == CALIBRATION) {
-            muse.data = [muse_data(), muse_data()]; // reset data
-            muse.baseline = 0;
-            muse.baseline_array = [];
+            // muse.data = [muse_data(), muse_data()]; // reset data
+            // muse.baseline = 0;
+            // muse.baseline_array = [];
+            reset_data(muse);
         }
         if (muse.state == 5) {
             console.log(muse.data[1].array); // Testing
             write_data(muse);
+            io.emit('toggle_on', muse.prefix);
         }
 
     } else if (msg[0].includes("toggle_on")) {
@@ -71,8 +73,13 @@ function parse(muse, msg) {
 
     } else if (msg[0].includes("horseshoe")) {
         for (var i = 0; i < 4; i++) {
+
+
             if (msg[i+1] == 4)
                 muse.connection_info[i] = 0;    // bad connection
+            else if (muse.address == '/muse') {
+                muse.connection_info[i] = msg[i+1]==1?2:1;
+            }
             else if (muse.connection_info[i] == 0 && msg[i+1] < 4)
                 muse.connection_info[i] = 1;    // okay connection
         }

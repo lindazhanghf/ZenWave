@@ -244,7 +244,6 @@
         socket.on('toggle_on', function(data) {
             console.log('Switching to', data);
             for (var i = 0; i < muse.length; i++) {
-                console.log(muse[i]);
                 if (muse[i] == data)
                     document.getElementById(muse[i] + '_state').classList.add("badge-background");
                 else
