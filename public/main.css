@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css?family=Montserrat:200,300');
+@import url('https://fonts.googleapis.com/css?family=Montserrat:100,200,300');
 
 .title {
 	font-family: 'Montserrat', sans-serif;
@@ -18,6 +18,7 @@
 	color: #4da4aa;
 	text-align: center;
 	padding-top: 0.5em;
+	margin-bottom: 0;
 }
 
 .panel {
@@ -25,21 +26,41 @@
 	height: 25em;
 	margin-top: 1em;
 	margin-bottom: 1em;
-	margin-left: 0.5em;
-	margin-right: 0.5em;
-	/*padding-bottom: 0.5em;*/
+	margin-left:0.5em;
+	margin-right:0.5em;
+	/*margin-left: 0.5em;*/
+	/*margin-right: 0.5em;*/
+	padding-left: 0;
+	padding-right: 0px;
 }
 
 .muse-canvas {
-  width: 95%;
+  width: 90%;
   height: auto;
+  margin-left: 1.3em;
 }
 
 .white-text {
 	font-family: 'Montserrat', sans-serif;
 	font-size: 1em;
-	font-weight: 200;
+	font-weight: 100;
 	/*font-weight: 'extra-light';*/
 	color: #fff;
 	text-align: center;
+	margin-bottom: 0;
+}
+
+.badge-background {
+    position: absolute;
+    left: 240px;
+    text-align: center;
+    height: 24px;
+    display: flex;
+    align-content: center;
+    align-items: center;
+    justify-content: center;
+    background-color: #4da4aa;
+    border-radius: 20px;
+    padding: 4px 12px;
+    box-sizing: border-box;
 }

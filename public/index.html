@@ -21,32 +21,8 @@
 </head>
 
 <body style="background-color: #2F353A">
-<!--     <div class="container-fluid"><div class="row">
-        <div class="col-md-5"><div class="panel">
-            <p class="title" style="font">MEDITATION RESULT</p>
-            <canvas  id="doughnut_chart"></canvas>
-        </div></div>
-        <div class="col-md-7"><div class="panel">
-            <p class="title" style="font">MEDITATION DATA</p>
-            <canvas style="width:554px;height:277px" id="line_chart"></canvas>
-        </div></div>
-        <div class="headband-black col-md-5"><div class="panel">
-        </div></div>
-        <div class="headband-white col-md-7 "><div class="panel container-fluid row" >
-            <div class="col-md-6">
-                <p class="small-title" style="font">#1 headband </p>
-                <canvas class="muse-canvas"  width="600" height="414" id="canvas-black"></canvas>
-                <p class="white-text" id="state-black" style="font">State: Idle</p>
-            </div><div class="col-md-6">
-                <p class="small-title" style="font">#2 headband</p>
-                <canvas class="muse-canvas"  width="600" height="414" id="canvas-white"></canvas>
-                <p class="white-text" id="state-white" style="font">State: Idle</p>
-            </div>
-        </div></div>
-    </div></div>
- -->
     <div class="container-fluid"><div class="row">
-        <div class="col-md-5"><div class="panel" style="height:auto;padding-top: 15.5em;padding-bottom: 18em">
+        <div class="col-md-5"><div class="panel" style="height:auto;padding-top: 18em;padding-bottom: 18em">
             <p class="title" style="font">MEDITATION RESULT</p>
             <div>
                 <canvas style="height:auto" id="doughnut_chart"></canvas>
@@ -57,15 +33,15 @@
             <p class="title" style="font">MEDITATION DATA</p>
             <canvas id="line_chart"></canvas>
             </div>
-            <div class="panel container-fluid row" style="height:400px">
+            <div class="panel container-fluid row" style="height:400px" style="padding:0">
                 <div class="col-md-6">
                     <p class="small-title" style="font">#1 headband </p>
                     <canvas class="muse-canvas"  width="600" height="414" id="canvas-black"></canvas>
-                    <p class="white-text" id="state-black" style="font">State: Idle</p>
+                    <p class="white-text" id="Muse_black_state" style="font">Idle</p>
                 </div><div class="col-md-6">
                     <p class="small-title" style="font">#2 headband</p>
                     <canvas class="muse-canvas"  width="600" height="414" id="canvas-white"></canvas>
-                    <p class="white-text" id="state-white" style="font">State: Idle</p>
+                    <p class="white-text" id="Muse_white_state" style="font">Idle</p>
                 </div>
 
             </div>
@@ -93,7 +69,7 @@
                     fill: false,
                     pointRadius: 0,
                     backgroundColor: transparent_color,
-                    borderColor: color_yellow, // window.chartColors.red,
+                    borderColor: color_yellow,
                     borderWidth: 2,
                     data: beta,
                 },
@@ -103,7 +79,7 @@
                     fill: false,
                     pointRadius: 0,
                     backgroundColor: transparent_color,
-                    borderColor: color_cyan, // window.chartColors.blue,
+                    borderColor: color_cyan,
                     borderWidth: 2,
                     data: alpha,
                 },
@@ -113,7 +89,7 @@
                     fill: false,
                     pointRadius: 0,
                     backgroundColor: transparent_color,
-                    borderColor: color_light_grey, // window.chartColors.grey,
+                    borderColor: color_light_grey,
                     borderWidth: 2,
                     data: baseline
                 },
@@ -257,15 +233,25 @@
             window.myLine = new Chart(ctx, line_chart_config);
         };
 
-        // var connection_muse_black = [1, 2, 2, 1]
-        // var connection_muse_white = [0, 2, 2, 0]
-
         /* Muse Manager */
+        const muse = ["Muse_black", "Muse_white"];
         const state_name = ["idle", "fitting", "calibration", "tutorial", "meditation", "bci", "detection"];
         var socket = io('http://127.0.0.1:8888');
         socket.on('connect',function() {
           console.log('Client has connected to the server!');
         });
+
+        socket.on('toggle_on', function(data) {
+            console.log('Switching to', data);
+            for (var i = 0; i < muse.length; i++) {
+                console.log(muse[i]);
+                if (muse[i] == data)
+                    document.getElementById(muse[i] + '_state').classList.add("badge-background");
+                else
+                    document.getElementById(muse[i] + '_state').classList.remove("badge-background");
+            }
+        });
+
         // black headband
         var context_black = document.getElementById('canvas-black').getContext('2d');
         var image_black = new Image();
@@ -276,11 +262,11 @@
             context_black.drawImage(image_black, 0, 0, width, height);
         };
         socket.on('Muse_black_state', function (data) {
-            console.log("Muse black state:" , data);
-            document.getElementById('state-black').innerHTML = "State: " + state_name[data];
+            // console.log("Muse black state:" , data);
+            document.getElementById('Muse_black_state').innerHTML = state_name[data];
           });
         socket.on('Muse_black_connection', function (data) {
-            console.log("Muse black:" , data);
+            // console.log("Muse black:" , data);
             draw_connection_info(context_black, image_black, data);
           });
 
@@ -294,14 +280,15 @@
             context_white.drawImage(image_white, 0, 0, width, height);
         };
         socket.on('Muse_white_state', function (data) {
-            console.log("Muse white state:" , data);
-            document.getElementById('state-white').innerHTML = "State: " + state_name[data];
+            // console.log("Muse white state:" , data);
+            document.getElementById('Muse_white_state').innerHTML = state_name[data];
           });
         socket.on('Muse_white_connection', function (data) {
-            console.log("Muse white:" , data);
+            // console.log("Muse white:" , data);
             draw_connection_info(context_white, image_white, data);
           });
 
+        // Draw connection indicators on canvas
         const connection_colors = ['rgba(231, 60, 30, 0.2)', 'rgba(231, 60, 30, 0.5)' , 'rgba(46, 204, 113, 0.5)']
         const area = [
                 [{x:50, y:142}, {x:75, y:175}, {x:120, y:330}, {x:115, y:330}],

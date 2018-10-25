@@ -25,12 +25,14 @@ const EXPLAINATION = 3;   // Guide user through 3 different interactions
 const MEDITATION = 4;     // IF Meditation Mode
 const BCI = 5;            // Final state after "flipped"
 
-var muse_white = Muse("Muse_white");
-var muse_black = Muse("Muse_black");
+var muse_black = Muse("Muse_black", "Muse_black");  // Make sure its the same as in Muse_Manager
+var muse_white = Muse("/Muse", "Muse_white");       // Make sure its the same as in Muse_Manager
+// var in_use = null;
 
-function Muse(name) {
+function Muse(address, prefix) {
     let m = {};
-    m.prefix = name;
+    m.address = address;
+    m.prefix = prefix;
     m.in_use = false;
     m.state = -1;
     m.connection_info = [0, 0, 0, 0];
@@ -39,15 +41,15 @@ function Muse(name) {
 }
 
 oscServer.on("message", function (msg, rinfo) {
-    console.log("TUIO message:" + msg);
-    if (msg[0].includes(muse_black.prefix)) {
+    if (msg[0].includes(muse_black.address)) {
         parse(muse_black, msg);
-    } else if (msg[0].includes(muse_white.prefix)) {
+    } else if (msg[0].includes(muse_white.address)) {
         parse(muse_white, msg);
     }
 });
 
 function parse(muse, msg) {
+    console.log("TUIO message:" + msg);
     if (msg[0].includes("state")) {
         muse.state = msg[1];
         console.log(muse.prefix + " enters state " + state_name[muse.state]);
@@ -62,6 +64,10 @@ function parse(muse, msg) {
             console.log(muse.data[1].array); // Testing
             write_data(muse);
         }
+
+    } else if (msg[0].includes("toggle_on")) {
+        io.emit('toggle_on', muse.prefix);
+        console.log("Start using ", muse.prefix);
 
     } else if (msg[0].includes("horseshoe")) {
         for (var i = 0; i < 4; i++) {
@@ -140,7 +146,7 @@ function write_data(muse) {
     content += "var beta_filled = " + JSON.stringify(beta.array_filled) + ";\n";
     let valid_data = (muse.num_alert + muse.num_relaxed) / 1000; // To calculate percentage [Meditation Result]
     content += "var result = " + JSON.stringify([Math.round(muse.num_relaxed/valid_data)/10, Math.round(muse.num_alert/valid_data)/10]) + ";\n";
-
+    console.log("Meditation result: ", muse.num_alert, muse.num_relaxed);
     // write to a file named data.js to be used by html to display data
     fs.writeFile('public/data.js', content, (err) => {
         if (err) throw err;
