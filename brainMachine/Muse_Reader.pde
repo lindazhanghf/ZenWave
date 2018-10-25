@@ -9,7 +9,7 @@ final static boolean debugOSC = false;
 // OSC data streamming
 import oscP5.*;
 import netP5.*;
-final static String muse_name = "Muse_black"; // "muse" default setting, "/muse" if via Muse Monitor app
+// final static String muse_name = Muse.in_use.name + ""; // "muse" default setting, "/muse" if via Muse Monitor app
 final static int recvPort = 8980;
 OscP5 oscP5;
 // To communicate with nodeJS server (visualization)
@@ -60,7 +60,6 @@ float[] eeg;
 // float[] gyroscope = new float[3];
 boolean[] good_connection = new boolean[4];
 int is_good;
-boolean headband_on = false;
 boolean has_data = false;
 
 // Calibration & Detection
@@ -111,7 +110,7 @@ void draw_Muse_Reader() {
     curr_time = current_time();
     fill(0);
 
-    if (!waiting_for_nod && detect_nod()) { // detect_nod strict
+    if (state > FITTING && state < BCI && !waiting_for_nod && detect_nod()) { // detect_nod strict
         // nodded = false;
         audio_cue[state][curr_clip].stop(); // Skip current audio
         // audio_time = -1;
@@ -122,32 +121,31 @@ void draw_Muse_Reader() {
     // State Machine
     switch (state) {
         case 0: // IDLE
-            if ((curr_time - state_start_time - 1) % 8 == 0)
-                play_audio(curr_clip);
+            // if ((curr_time - state_start_time - 1) % 8 == 0)
+            //     play_audio(curr_clip);
 
-            if ((curr_time - state_start_time - 1) % 16 == 0) {
-                resetBrain();
-                state_start_time--;
-            }
+            // if ((curr_time - state_start_time - 1) % 16 == 0) {
+            //     resetBrain();
+            //     state_start_time--;
+            // }
             break;
         case 1: // FITTING
-            if ((curr_time - state_start_time) > 2 && good_connection[1] && good_connection[2]) { // Sensors at the ears not fitted correctly
-                state_start_time = curr_time - 8;
-                play_audio(1);
-                break;
-            }
+            // if ((curr_time - state_start_time) > 2 && good_connection[1] && good_connection[2]) { // Sensors at the ears not fitted correctly
+            //     state_start_time = curr_time - 8;
+            //     play_audio(1);
+            //     break;
+            // }
 
-            if ((curr_time - state_start_time) % 10 == 0) {
-                state_start_time = curr_time - 1;
-                play_audio(0);
-            }
+            // if ((curr_time - state_start_time) % 10 == 0) {
+            //     state_start_time = curr_time - 1;
+            //     play_audio(0);
+            // }
             break;
 
         case 2: // CALIBRATION
             calibration_time =  curr_time - state_start_time;
             if (calibration_data_points >= 70)
                 change_state_when_finished();
-            // TODO missing second audio
             break;
 
         case 3: // EXPLAINATION
@@ -196,7 +194,7 @@ void draw_Muse_Reader() {
 
         case 4: // MEDITATION
             if (curr_time - state_start_time > MEDITATION_TIME) {
-                changeState(BCI); // TODO MEDITATION_END
+                changeState(BCI); // TODO last audio clip
                 break;
             }
 
@@ -238,8 +236,11 @@ void draw_Muse_Reader() {
 void keyReleased() {
     if (key == ENTER || key == RETURN)
        changeState(state+1==STATES.length?0:state+1);
-    if (key == '\\')
+    if (key == '\\') { // Go to previous state
+        artBrainLoop.stop();
+        humBrainLoop.stop();
         changeState(state-1==-1?BCI:state-1);
+    }
     else if (key == ' ') { // Space bar
         toggle_headbands();
     }
@@ -292,12 +293,12 @@ void changeState(int new_state) {
         println ("rect y = ", diagram_bottom_y);
 
         // Send beta_upper_limit to BrainDiagram as a baseline of the diagram
-        OscMessage baseline_msg = new OscMessage("Muse_black/data/baseline");
+        OscMessage baseline_msg = new OscMessage(Muse.in_use.name + "/data/baseline");
         baseline_msg.add(beta_upper_limit);
         OSC_send(baseline_msg);
     }
     else if (state == BCI) {  // reset collected data
-        beta_upper_limit = 0.3;
+        beta_upper_limit = 0.1;
         calibration_data_points = 0;
         // beta = new float[1000];
         // good = new int[1000];
@@ -322,8 +323,6 @@ void changeState(int new_state) {
         rectY = 200;
     }
     else if (new_state == CALIBRATION) {
-        artBrainLoop.stop();
-        humBrainLoop.stop();
         audio_cue[state][0].play();
         humBrainLoop.loop(1);
     }
@@ -362,24 +361,6 @@ void change_state_when_finished() {
         changeState(state + 1);
 }
 
-void oscEvent(OscMessage msg) {
-    if (debugOSC) {
-        print("---OSC Message---");
-        println(msg);
-    }
-
-    randomly_moving = true;
-    getHeadbandStatus(msg);
-
-        getGyroscope(msg);
-    if (state > FITTING && state < BCI) {
-        getAbsolute(msg);
-    }
-
-    if (state > CALIBRATION)
-        getScore(msg);
-}
-
 void collect_meditation(boolean has_beta_data) {
     if (!start_meditation) //  && beta_data_points >= beta.length Data array overflow
         return;
@@ -388,13 +369,13 @@ void collect_meditation(boolean has_beta_data) {
     // if (eeg[BETA] == prev_eeg)
     //     return;
 
-    OscMessage data_msg = new OscMessage("Muse_black/data/beta");
+    OscMessage data_msg = new OscMessage(Muse.in_use.name + "/data/beta");
     data_msg.add(absolute[BETA]);
     data_msg.add(timestamp);
     data_msg.add(is_good);
     OSC_send(data_msg);
 
-    data_msg = new OscMessage("Muse_black/data/alpha");
+    data_msg = new OscMessage(Muse.in_use.name + "/data/alpha");
     data_msg.add(absolute[ALPHA]);
     data_msg.add(timestamp);
     data_msg.add(is_good);
@@ -448,26 +429,31 @@ void reset_detection() {
 }
 
 /* Headband Status Information (fitting precision) */
-void getHeadbandStatus(OscMessage msg) {
+void getHeadbandStatus(OscMessage msg, Muse muse) {
     // OSC_send(msg);
 
-    if (msg.checkAddrPattern(muse_name + "/elements/touching_forehead")
+    if (msg.checkAddrPattern(muse.name + "/elements/touching_forehead")
         && (msg.checkTypetag("i")))
     {
-        // debugPrint("Touching forehead? " + String.valueOf(msg.get(0).intValue()) + "\n");
-        if (msg.get(0).intValue() == 1) {
-            headband_on = true;
-            if (state == IDLE)
-                changeState(FITTING);
-        } else {
-            headband_on = false;
-            if (state != IDLE)
-                changeState(IDLE);
-        }
+        debugPrint("Touching forehead????? " + String.valueOf(msg.get(0).intValue()) + "\n");
+        muse.headband_on = (msg.get(0).intValue() == 1);
+        // if (msg.get(0).intValue() == 1) {
+        //     if (state == IDLE)
+        //         changeState(FITTING);
+        // } else {
+        //     if (state != IDLE)
+        //         changeState(IDLE);
+        // }
     }
 
-    if (state > IDLE && msg.checkAddrPattern(muse_name + "/elements/horseshoe"))
+    if (muse.headband_on && msg.checkAddrPattern(muse.name + "/elements/horseshoe"))
     {
+        is_good = 0;
+        for (int i=0; i< NUM_CHANNEL; i++) {
+            good_connection[i] = get_OSC_value(msg, i) == 1;
+            if (get_OSC_value(msg, i) == 1)
+                is_good++;
+        }
         int sum_precision = 0;
         for (int i=0; i< NUM_CHANNEL; i++) {
             hsi_precision[i] = (int)get_OSC_value(msg, i);
@@ -481,7 +467,7 @@ void getHeadbandStatus(OscMessage msg) {
     }
 
     // Strict data quality indicator for each channel, 0 = bad, 1 = good
-    if (state > IDLE && msg.checkAddrPattern(muse_name + "/elements/is_good"))
+    if (muse.headband_on && msg.checkAddrPattern(muse.name + "/elements/is_good"))
     {
         is_good = 0;
         for (int i=0; i< NUM_CHANNEL; i++) {
@@ -490,15 +476,15 @@ void getHeadbandStatus(OscMessage msg) {
                 is_good++;
         }
 
-        if (state ==  FITTING && is_good == 4) // 4 means all fitted
-            changeState(CALIBRATION);
+        // if (state ==  FITTING && is_good == 4) // 4 means all fitted
+        //     changeState(CALIBRATION);
         OSC_send(msg);
     }
 }
 
 /* Absolute Band Power */
-void getAbsolute(OscMessage msg) {
-    has_data = get_elements_data(msg, "absolute", absolute);
+void getAbsolute(OscMessage msg, String muse_name) {
+    has_data = get_elements_data(msg, muse_name, "absolute", absolute);
 
     if (state == MEDITATION && msg.checkAddrPattern(muse_name + "/elements/beta_absolute"))
         collect_meditation(has_data);
@@ -513,7 +499,6 @@ void getAbsolute(OscMessage msg) {
 
             if (calibration_time > 20 && calibration_data_points >= 70) {
                 // changeState(EXPLAINATION);
-                // curr_clip++;
                 calibration_done.play();
                 play_next_clip();
             }
@@ -522,8 +507,8 @@ void getAbsolute(OscMessage msg) {
 }
 
 /* Band Power Score */
-void getScore(OscMessage msg) {
-    get_elements_data(msg, "session_score", score);
+void getScore(OscMessage msg, String muse_name) {
+    get_elements_data(msg, muse_name, "session_score", score);
 }
 
 
@@ -531,7 +516,7 @@ void getScore(OscMessage msg) {
 final static int gyro_threshold = 30;  // Detect a nod after audio cues to continue
 final static int gyro_threshold_strict = 60; // Used to skip ANY audio cues
 int threshold = gyro_threshold_strict;       // Angular velocity required to trigger a "nod"
-void getGyroscope(OscMessage msg) {
+void getGyroscope(OscMessage msg, String muse_name) {
     if (msg.checkAddrPattern(muse_name + "/gyro")) {
         float y = msg.get(1).floatValue();
         switch (gyro_state) {
@@ -563,17 +548,24 @@ void getGyroscope(OscMessage msg) {
 }
 
 /* Get OSC data within the "elements" category */
-boolean get_elements_data(OscMessage msg, String element_name, float[] data_array) {
+boolean get_elements_data(OscMessage msg, String muse_name, String element_name, float[] data_array) {
     if (is_good < 2) // Bad connection
         return false;
+
+    if (muse_name == "/muse")
+        return get_elements_data_muse_monitor(msg, muse_name, element_name, data_array);
 
     for (int i = 0; i < BANDS.length; i++) {
         if (msg.checkAddrPattern(muse_name + "/elements/" + BANDS[i] + "_" + element_name)) {
             float sum = 0;
-            for (int j = 0; j < NUM_CHANNEL; j++) {
-                sum += get_OSC_value(msg, j);
-            }
-            sum = sum/4;
+            // if (msg.checkTypetag("f")) { // from muse monitor
+            //     sum = msg.get(0).floatValue();
+            // } else {
+                for (int j = 0; j < NUM_CHANNEL; j++) {
+                    sum += get_OSC_value(msg, j);
+                }
+                sum = sum/4;
+            // }
 
             if (!Float.isNaN(sum) && sum != data_array[i]) {
                 data_array[i] = sum;
@@ -589,19 +581,20 @@ boolean get_elements_data(OscMessage msg, String element_name, float[] data_arra
     return false;
 }
 
-boolean get_elements_data_muse_monitor(OscMessage msg, String element_name, float[] data_array) {
+boolean get_elements_data_muse_monitor(OscMessage msg, String muse_name, String element_name, float[] data_array) {
     for (int i = 0; i < 5; i++) {
         if (msg.checkAddrPattern(muse_name + "/elements/" + BANDS[i] + "_" + element_name)) {
             data_array[i] = msg.get(0).floatValue();
             debugPrint("  " + BANDS[i] + "=" + String.valueOf(data_array[i]) + "\n");
-            break;
+            if (!Float.isNaN(data_array[i]))
+                return true;
         }
     }
-    return true;
+    return false;
 }
 
 /* EEG */
-void getEEG(OscMessage msg){
+void getEEG(OscMessage msg, String muse_name){
     if (msg.checkAddrPattern(muse_name + "/eeg")) {
             if (msg.checkTypetag("dddddd")) {
                 for (int i=0; i < 4; i++) {
@@ -617,7 +610,7 @@ void getEEG(OscMessage msg){
 }
 
 /* Blink */
-void getBlink(OscMessage msg) {
+void getBlink(OscMessage msg, String muse_name) {
     if (msg.checkAddrPattern(muse_name + "/elements/blink")) {
         print("\nBlink ");
         if (msg.checkTypetag("i")) {
@@ -633,6 +626,8 @@ int current_time() {
 
 /* get float value from "ffff" or double value from "dddd" OSC data */
 float get_OSC_value(OscMessage msg, int index) {
+    // if (debugOSC)
+    //     println("Try get 4 floats/doubles");
     if (msg.checkTypetag("ffff"))
         return msg.get(index).floatValue();
     if (msg.checkTypetag("dddd"))
@@ -644,9 +639,9 @@ float get_OSC_value(OscMessage msg, int index) {
 
 
 void OSC_send_state(int state) {
-  OscMessage myMessage = new OscMessage("Muse_black/state");
-  myMessage.add(state);
-  oscP5.send(myMessage, muse_manager_address);
+    OscMessage myMessage = new OscMessage(Muse.in_use.name + "/state");
+    myMessage.add(state);
+    oscP5.send(myMessage, muse_manager_address);
 }
 
 void OSC_send(OscMessage msg) {

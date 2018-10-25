@@ -6,20 +6,34 @@
  */
 //////////////////////////////////////////////////////
 
-
-// List of Muse Headband
-Muse[] muse = new Muse[2]; // Enter the number of headbands
-
 void muse_manager_setup() {
-    muse[0] = new Muse("Muse_black"); // Connected via Muse Direct (Win 10)
-    muse[1] = new Muse("/Muse"); 	  // Connected via Muse Monitor (iOS App)
-    Muse.start_using(muse[0]);
+    // Take the first muse as the default:
+    Muse default_headband =
+    new Muse("Muse_black"); // Connected via Muse Direct (Win 10); "Muse_white"
+    new Muse("/muse"); 	   // Connected via Muse Monitor (iOS App)
+    // new Muse("Person0");       // Default setting of Muse Direct
+    // new Muse("Muse_white");
+    Muse.start_using(default_headband);
 }
 
-void update_muse_manager() {
-    for (int i = 0; i < muse.length; i++) {
-        muse[i].update();
+void oscEvent(OscMessage msg) {
+    if (debugOSC) {
+        print("---OSC Message---");
+        println(msg);
     }
+
+    randomly_moving = true;
+    for (Muse m : Muse.get_list()) {
+        getHeadbandStatus(msg, m);
+    }
+
+    getGyroscope(msg, Muse.in_use.name);
+    if (state > FITTING && state < BCI) {
+        getAbsolute(msg, Muse.in_use.name);
+    }
+
+    if (state > CALIBRATION)
+        getScore(msg, Muse.in_use.name);
 }
 
 void toggle_headbands() {
@@ -28,4 +42,5 @@ void toggle_headbands() {
 	OscMessage myMessage = new OscMessage(start_using.name + "/toggle_on");
 	myMessage.add(0);
 	oscP5.send(myMessage, muse_manager_address);
+    changeState(IDLE);
 }

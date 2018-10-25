@@ -20,7 +20,11 @@ class Muse {
         list.add(this);
     }
 
-    static public int getNumOfMuses() {
+    static public ArrayList<Muse> get_list() {
+        return list;
+    }
+
+    static public int get_number() {
         return list.size();
     }
 
@@ -29,6 +33,7 @@ class Muse {
             m.using = false;
         }
         muse.using = true;
+        in_use = muse;
     }
 
     static public Muse toggle() {
@@ -40,9 +45,9 @@ class Muse {
         return in_use;
     }
 
-    void update() {
+    // void update() {
 
-    }
+    // }
 
 
 }
