@@ -234,11 +234,11 @@ class  Neuron {
 
 
   void drawSynapse() {
-    int band = BETA; // Only visualize the Beta band
+    float beta_score = (state > CALIBRATION) ? score[BETA] : 0;
     if (hsi_precision[2] > 0 && hsi_precision[2] < 4) // <2
-      stroke(242, 242 - (24 / 2), 13 + 24, score[BETA] * 80 + 20);
+      stroke(242, 242 - (24 / 2), 13 + 24, beta_score * 80 + 20);
     else
-      stroke(150, score[BETA] * 80 + 20);
+      stroke(150, beta_score * 80 + 20);
 
     if (!is_human_brain())
       fill_in_synapse_AI();
@@ -321,7 +321,7 @@ class  Neuron {
   }
 
   void fill_in_synapse_AI() {
-    int col = (int)(abs((score[ALPHA] * 50) + 12)) * 2;
+    int col = (int)(abs((score[BETA] * 50) + 12)) * 2;
     stroke(0 + col, 255 - col, 0 + (col * 3), 45);
   }
 

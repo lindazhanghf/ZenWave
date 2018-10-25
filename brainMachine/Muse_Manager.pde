@@ -9,7 +9,7 @@
 void muse_manager_setup() {
     // Take the first muse as the default:
     Muse default_headband =
-    new Muse("Muse_black"); // Connected via Muse Direct (Win 10); "Muse_white"
+    // new Muse("Muse_black"); // Connected via Muse Direct (Win 10); "Muse_white"
     new Muse("/muse"); 	   // Connected via Muse Monitor (iOS App)
     // new Muse("Person0");       // Default setting of Muse Direct
     // new Muse("Muse_white");
@@ -32,8 +32,8 @@ void oscEvent(OscMessage msg) {
         getAbsolute(msg, Muse.in_use.name);
     }
 
-    if (state > CALIBRATION)
-        getScore(msg, Muse.in_use.name);
+    // if (state > FITTING)
+    //     getScore(msg, Muse.in_use.name);
 }
 
 void toggle_headbands() {

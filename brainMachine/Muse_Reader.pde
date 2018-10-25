@@ -44,7 +44,7 @@ final static int BCI = 5;            // Final state after "flipped"
 final static int MEDITATION = 4;    // IF Meditation Mode
 
 // Audio Cues
-final static int[] number_of_clips = {1, 2, 2, 9, 2};
+final static int[] number_of_clips = {1, 2, 2, 9, 3};
 SoundFile[][] audio_cue = new SoundFile[5][];
 SoundFile calibration_done;
 SoundFile skip_step;
@@ -57,10 +57,11 @@ int[] hsi_precision = new int[4];
 float[] absolute = new float[5];
 float[] score = new float[5];
 float[] eeg;
-// float[] gyroscope = new float[3];
 boolean[] good_connection = new boolean[4];
 int is_good;
 boolean has_data = false;
+float[] score_bins = new float[30];
+int[] score_bins_size = new int[30];
 
 // Calibration & Detection
 float beta_upper_limit = 0.3; // Calculated by average of of Beta absolute band power during CALIBRATION state
@@ -144,7 +145,7 @@ void draw_Muse_Reader() {
 
         case 2: // CALIBRATION
             calibration_time =  curr_time - state_start_time;
-            if (calibration_data_points >= 70)
+            if (calibration_data_points > 70)
                 change_state_when_finished();
             break;
 
@@ -193,15 +194,24 @@ void draw_Muse_Reader() {
             break;
 
         case 4: // MEDITATION
-            if (curr_time - state_start_time > MEDITATION_TIME) {
-                changeState(BCI); // TODO last audio clip
+            // Do nothing if the audio is still playing
+            if (audio_cue[state][curr_clip].isPlaying())
                 break;
-            }
 
-            if (!start_meditation && audio_cue[state][curr_clip].isPlaying()) {
+            // If audio stopped:
+            if (curr_clip == 0) {
+                play_next_clip();
+                break;
+            } else if (curr_clip == 1 && !start_meditation) {
                 state_start_time = curr_time;        // reset state start time
                 start_meditation = true;             // meditation starts
                 milliseconds_start = millis();
+                println("start_meditation");
+            } else if (curr_clip == 1 && curr_time - state_start_time > MEDITATION_TIME) {
+                play_next_clip();
+                break;
+            } else if (curr_clip == 2) {
+                changeState(BCI); // last audio clip
             }
         default:
             break;
@@ -267,7 +277,7 @@ void start_wait_nod() {
         skip_step.play();
         waiting_for_nod = true;
         threshold = gyro_threshold;
-        println("PLAYED!!");
+        println("Play audio for 'skip by nodding'");
     }
 }
 
@@ -305,7 +315,7 @@ void changeState(int new_state) {
     }
 
     // Stop previous audio
-    println(state, curr_clip);
+    // println(state, curr_clip);
     if (state < number_of_clips.length && curr_clip < number_of_clips[state])
         audio_cue[state][curr_clip].stop();
 
@@ -321,10 +331,14 @@ void changeState(int new_state) {
         artBrainLoop.stop();
         humBrainLoop.stop();
         rectY = 200;
+        score_bins = new float[30];
+        score_bins_size = new int[30];
     }
     else if (new_state == CALIBRATION) {
         audio_cue[state][0].play();
         humBrainLoop.loop(1);
+        score_bins = new float[30];
+        score_bins_size = new int[30];
     }
     else if (new_state == EXPLAINATION) {
         audio_cue[state][0].play();
@@ -364,10 +378,8 @@ void change_state_when_finished() {
 void collect_meditation(boolean has_beta_data) {
     if (!start_meditation) //  && beta_data_points >= beta.length Data array overflow
         return;
+    beta_data_points++;
     int timestamp = (millis() - milliseconds_start); // / 10; // Precision set to 0.01 seconds
-    // Get rid of duplicate data
-    // if (eeg[BETA] == prev_eeg)
-    //     return;
 
     OscMessage data_msg = new OscMessage(Muse.in_use.name + "/data/beta");
     data_msg.add(absolute[BETA]);
@@ -492,12 +504,12 @@ void getAbsolute(OscMessage msg, String muse_name) {
     if (has_data && msg.checkAddrPattern(muse_name + "/elements/beta_absolute")) {
         if (state == DETECTION)
             detect_calmness();
-        else if (calibration_data_points < 70 && state == CALIBRATION && calibration_time > 12 && is_good > 2)
+        else if (calibration_data_points < 70 && state == CALIBRATION && calibration_time > 20 && is_good > 2)
         {
             beta_sum += absolute[BETA];
             calibration_data_points++;
 
-            if (calibration_time > 20 && calibration_data_points >= 70) {
+            if (calibration_time > 30 && calibration_data_points >= 70) {
                 // changeState(EXPLAINATION);
                 calibration_done.play();
                 play_next_clip();
@@ -558,18 +570,18 @@ boolean get_elements_data(OscMessage msg, String muse_name, String element_name,
     for (int i = 0; i < BANDS.length; i++) {
         if (msg.checkAddrPattern(muse_name + "/elements/" + BANDS[i] + "_" + element_name)) {
             float sum = 0;
-            // if (msg.checkTypetag("f")) { // from muse monitor
-            //     sum = msg.get(0).floatValue();
-            // } else {
-                for (int j = 0; j < NUM_CHANNEL; j++) {
-                    sum += get_OSC_value(msg, j);
-                }
-                sum = sum/4;
-            // }
+            for (int j = 0; j < NUM_CHANNEL; j++) {
+                sum += get_OSC_value(msg, j);
+            }
+            sum = sum/4;
 
             if (!Float.isNaN(sum) && sum != data_array[i]) {
                 data_array[i] = sum;
                 debugPrint(" " + BANDS[i] + "=" + String.valueOf(data_array[i]));
+
+                // calculate beta session score using beta absolute band
+                if (msg.checkAddrPattern(muse_name + "/elements/beta_absolute"))
+                    calculate_session_score_muse_monitor(data_array[i]);
                 return true;
             }
             else {
@@ -586,11 +598,75 @@ boolean get_elements_data_muse_monitor(OscMessage msg, String muse_name, String 
         if (msg.checkAddrPattern(muse_name + "/elements/" + BANDS[i] + "_" + element_name)) {
             data_array[i] = msg.get(0).floatValue();
             debugPrint("  " + BANDS[i] + "=" + String.valueOf(data_array[i]) + "\n");
+
             if (!Float.isNaN(data_array[i]))
+                // calculate beta session score using beta absolute band
+                if (msg.checkAddrPattern(muse_name + "/elements/beta_absolute"))
+                    calculate_session_score_muse_monitor(data_array[i]);
                 return true;
         }
     }
     return false;
+}
+
+/*
+    Calculate band session score from absolute band power
+
+    Algorithm derived from www.developer.choosemuse.com:
+    " The band session score is computed by comparing the current value of a band power
+    to its history. This current value is mapped to a score between 0 and 1 using
+    a linear function that returns 0 if the current value is equal to or below the
+    10th percentile of the distribution of band powers, and returns 1 if it’s
+    equal to or above the 90th percentile. Linear scoring between 0 and 1 is done
+    for any value between these two percentiles.
+
+    Be advised that these scores are based on recent history and it will take a few
+    seconds before having a stable distribution to score the power against. The
+    estimated distribution is continuously updated as long as the headband is on
+    the head. However, every time it’s updated, the newest values are weighted
+    to have more importance than the historical values. This means that eventually
+    old values will not be present anymore in the estimated distribution.
+
+    The half-life of the estimated distribution at any given point is around 10 seconds. "
+
+    Only the absolute data that's between the score_lower_bound and score_upper_bound
+    will be used to calculate Band Session Score, anything else will be considered a bad data.
+*/
+final static float score_lower_bound = -0.5;
+final static float score_upper_bound = 1;
+final static float decay_percentage = 0.9931;
+boolean calculate_session_score_muse_monitor(float beta) {
+    if (is_good < 2 || beta < score_lower_bound || beta >= score_upper_bound)
+        return false;
+    int bin_index = (int)((beta - score_lower_bound) / 0.05);
+
+    score_bins[bin_index] += beta;
+    score_bins_size[bin_index]++;
+
+    int total_number_points = 0;
+    for (int i = 0; i < score_bins_size.length; i++) { total_number_points += score_bins_size[i]; }
+
+    int sum_number_points = 0;
+    int bin_index_10th_percentile = -1;
+    int bin_index_90th_percentile = -1;
+    for (int i = 0; i < score_bins_size.length; i++) {
+        if (bin_index_10th_percentile < 0 && sum_number_points > total_number_points / 10)
+            bin_index_10th_percentile = i - 1;
+        if (bin_index_90th_percentile < 0 && sum_number_points > total_number_points / 10 * 9)
+            bin_index_90th_percentile = i - 1;
+        sum_number_points += score_bins_size[i];
+    }
+    if (bin_index_90th_percentile < 0) bin_index_90th_percentile = score_bins_size.length - 1;
+
+    float lower_bound = bin_index_10th_percentile * 0.05 + score_lower_bound;
+    float upper_bound = bin_index_90th_percentile * 0.05 + score_lower_bound;
+    score[BETA] = (beta - lower_bound) / (upper_bound - lower_bound);
+
+    for (int i = 0; i < score_bins.length; i++) {
+        score_bins[i] *= decay_percentage;
+    }
+    println(lower_bound, "~", upper_bound, "  result =", score[BETA]); // TODO
+    return true;
 }
 
 /* EEG */
