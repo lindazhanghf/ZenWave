@@ -145,7 +145,7 @@ void draw_Muse_Reader() {
 
         case 2: // CALIBRATION
             calibration_time =  curr_time - state_start_time;
-            if (calibration_data_points > 70)
+            if (calibration_data_points >= 70 && curr_clip == 1)
                 change_state_when_finished();
             break;
 
@@ -154,12 +154,15 @@ void draw_Muse_Reader() {
                 waiting_for_nod = false;
                 play_next_clip();
             } else if (waiting_for_nod && detect_nod()) {
+                println("nodded NEXT!!");
                 waiting_for_nod = false;
                 threshold = gyro_threshold_strict;
                 skip_step.stop();
+                if (curr_clip + 1 >= number_of_clips[state]) {
+                    changeState(MEDITATION);
+                    break;
+                }
                 play_next_clip();
-                println("NEXT!!");
-                if (curr_clip + 1 >= number_of_clips[state]) changeState(MEDITATION);
             } else if (waiting_for_nod)
                 break;
 
@@ -294,7 +297,7 @@ void changeState(int new_state) {
     if (state == CALIBRATION) {
         // Calculate average beta band from calibration
         beta_upper_limit = beta_sum / calibration_data_points;
-        if (Float.isNaN(beta_upper_limit)) // || beta_upper_limit < 0.1
+        if (Float.isNaN(beta_upper_limit) || beta_upper_limit == Float.NEGATIVE_INFINITY) // || beta_upper_limit < 0.1
             beta_upper_limit = 0.1;
         println("Beta Upper Limit = ", beta_upper_limit);
 
@@ -319,6 +322,7 @@ void changeState(int new_state) {
     if (state < number_of_clips.length && curr_clip < number_of_clips[state])
         audio_cue[state][curr_clip].stop();
 
+    print(STATES[state], "lasted for", (curr_time - state_start_time), "s |");
     println("Change to new state: ", STATES[new_state]);
     state = new_state;
     state_start_time = curr_time;
@@ -335,6 +339,7 @@ void changeState(int new_state) {
         score_bins_size = new int[30];
     }
     else if (new_state == CALIBRATION) {
+        resetBrain();
         audio_cue[state][0].play();
         humBrainLoop.loop(1);
         score_bins = new float[30];
@@ -376,10 +381,10 @@ void change_state_when_finished() {
 }
 
 void collect_meditation(boolean has_beta_data) {
-    if (!start_meditation) //  && beta_data_points >= beta.length Data array overflow
+    if (!start_meditation)
         return;
-    beta_data_points++;
-    int timestamp = (millis() - milliseconds_start); // / 10; // Precision set to 0.01 seconds
+    // beta_data_points++; // Debug
+    int timestamp = (millis() - milliseconds_start);
 
     OscMessage data_msg = new OscMessage(Muse.in_use.name + "/data/beta");
     data_msg.add(absolute[BETA]);
@@ -447,7 +452,7 @@ void getHeadbandStatus(OscMessage msg, Muse muse) {
     if (msg.checkAddrPattern(muse.name + "/elements/touching_forehead")
         && (msg.checkTypetag("i")))
     {
-        debugPrint("Touching forehead????? " + String.valueOf(msg.get(0).intValue()) + "\n");
+        debugPrint("Touching forehead? " + String.valueOf(msg.get(0).intValue()) + "\n");
         muse.headband_on = (msg.get(0).intValue() == 1);
         // if (msg.get(0).intValue() == 1) {
         //     if (state == IDLE)
@@ -456,6 +461,7 @@ void getHeadbandStatus(OscMessage msg, Muse muse) {
         //     if (state != IDLE)
         //         changeState(IDLE);
         // }
+        OSC_send(msg);
     }
 
     if (muse.headband_on && msg.checkAddrPattern(muse.name + "/elements/horseshoe"))
@@ -504,12 +510,12 @@ void getAbsolute(OscMessage msg, String muse_name) {
     if (has_data && msg.checkAddrPattern(muse_name + "/elements/beta_absolute")) {
         if (state == DETECTION)
             detect_calmness();
-        else if (calibration_data_points < 70 && state == CALIBRATION && calibration_time > 20 && is_good > 2)
+        else if (calibration_data_points < 70 && state == CALIBRATION && calibration_time > 18 && is_good > 2)
         {
             beta_sum += absolute[BETA];
             calibration_data_points++;
 
-            if (calibration_time > 30 && calibration_data_points >= 70) {
+            if (calibration_time > 25 && calibration_data_points >= 70) {
                 // changeState(EXPLAINATION);
                 calibration_done.play();
                 play_next_clip();
@@ -665,7 +671,7 @@ boolean calculate_session_score_muse_monitor(float beta) {
     for (int i = 0; i < score_bins.length; i++) {
         score_bins[i] *= decay_percentage;
     }
-    println(lower_bound, "~", upper_bound, "  result =", score[BETA]); // TODO
+    // println(lower_bound, "~", upper_bound, "  result =", score[BETA]); // TODO
     return true;
 }
 

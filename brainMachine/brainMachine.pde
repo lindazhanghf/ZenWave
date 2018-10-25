@@ -70,9 +70,9 @@ void setup() {
 
 // Audio Loop
   artBrainLoop = new SoundFile (this, "artBrain.mp3");
-  artBrainLoop.amp(0.8);
+  artBrainLoop.amp(0.6);
   humBrainLoop = new SoundFile (this, "jazzLoop.wav");
-  humBrainLoop.amp(0.5);
+  humBrainLoop.amp(0.4);
 
   // Neuron Setup
   n = new Neuron[580];
@@ -132,7 +132,7 @@ void draw() {
     background(255);
   }
 
-  if (state > CALIBRATION) {
+  if (state > CALIBRATION && absolute[BETA] > -0.5 && absolute[BETA] < 2) {
     // float rate = abs(1-absolute[BETA] - 1.8);
     float rate = abs(absolute[BETA] + 1 - beta_upper_limit);
     humBrainLoop.rate(rate);
@@ -235,10 +235,12 @@ class  Neuron {
 
   void drawSynapse() {
     float beta_score = (state > CALIBRATION) ? score[BETA] : 0;
+    // beta_score =  beta_score / 10 * 8 + 0.1;
+    if (beta_score < 0) beta_score = 0;
     if (hsi_precision[2] > 0 && hsi_precision[2] < 4) // <2
-      stroke(242, 242 - (24 / 2), 13 + 24, beta_score * 80 + 20);
+      stroke(242, 242 - (24 / 2), 13 + 24, beta_score * 60 + 30);
     else
-      stroke(150, beta_score * 80 + 20);
+      stroke(150, beta_score * 60 + 30);
 
     if (!is_human_brain())
       fill_in_synapse_AI();
@@ -398,7 +400,7 @@ class Signal {
 
           // Position & Size of explosion
           if (state > CALIBRATION)
-            ellipse(x, y, (abs((absolute[BETA] + 0.3 - beta_upper_limit) * 6)) * i, (abs((absolute[BETA] + 0.3 - beta_upper_limit) * 6)) * i);
+            ellipse(x, y, (abs((absolute[BETA] + 0.3 - beta_upper_limit) * 5)) * i, (abs((absolute[BETA] + 0.3 - beta_upper_limit) * 5)) * i);
 
           popStyle();
         }

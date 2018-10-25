@@ -9,8 +9,8 @@
 void muse_manager_setup() {
     // Take the first muse as the default:
     Muse default_headband =
-    // new Muse("Muse_black"); // Connected via Muse Direct (Win 10); "Muse_white"
-    new Muse("/muse"); 	   // Connected via Muse Monitor (iOS App)
+    new Muse("Muse_black"); // Connected via Muse Direct (Win 10); "Muse_white"
+    new Muse("/muse"); 	    // Connected via Muse Monitor (iOS App)
     // new Muse("Person0");       // Default setting of Muse Direct
     // new Muse("Muse_white");
     Muse.start_using(default_headband);
@@ -28,7 +28,7 @@ void oscEvent(OscMessage msg) {
     }
 
     getGyroscope(msg, Muse.in_use.name);
-    if (state > FITTING && state < BCI) {
+    if (state > FITTING) {
         getAbsolute(msg, Muse.in_use.name);
     }
 
