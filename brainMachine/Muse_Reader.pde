@@ -2,8 +2,6 @@
 
 //////////////////////////////////////////////////////
 
-final static boolean is_projecting = false;
-
 // Debug
 final static boolean debug = false;
 final static boolean debugOSC = false;
@@ -11,30 +9,22 @@ final static boolean debugOSC = false;
 // OSC data streamming
 import oscP5.*;
 import netP5.*;
-final static String muse_name = "muse"; // "muse" default setting, "/muse" if via Muse Monitor app
+final static String muse_name = "Muse_black"; // "muse" default setting, "/muse" if via Muse Monitor app
 final static int recvPort = 8980;
 OscP5 oscP5;
 // To communicate with nodeJS server (visualization)
 final static NetAddress muse_manager_address = new NetAddress("127.0.0.1", 7980);
 
-// Time
-// import java.util.Calendar;
-// import java.util.TimeZone;
-// Calendar calendar;
-// TODO use ISO time: System.currentTimeMillis()
-
 // MACROS
 final static boolean MEDITATION_MODE = true; // "true" for mediation, "false" for clam detection mode
-final static int CALM_TIME = 5;   // How many consecutive seconds of calm time must be detected before entering A.I state
 final static int MEDITATION_TIME = 60; // Length of the meditation time in seconds, default 60 seconds
 final static int NUM_CHANNEL = 4;
-final static int NUM_BAND = 5;
 final static String[] BANDS = {"alpha", "beta", "gamma", "delta", "theta", "EEG"};
 final static color[] COLORS = {#E0FFFF, #FF5733, #F4D03F, #B0A94F, #82E0AA, #000000};
 final static int RECT_HEIGHT = 200;
 final static int RECT_WIDTH = 50;
 final static int BASELINE_HEIGHT = 500;
-final static int DIAGRAM_LEFT_LIMIT = 40;
+final static int CALM_TIME = 5;   // How many consecutive seconds of calm time must be detected before entering A.I state
 
 // Bands
 final static int ALPHA = 0;
@@ -101,6 +91,7 @@ boolean randomly_moving = false;
 
 void setup_Muse_Reader() {
     oscP5 = new OscP5(this, recvPort);
+    // oscP5 = new OscP5(this, 7000);
 
     calibration_done = new SoundFile (this, "success.wav");
     skip_step = new SoundFile (this, "AudioCues/SKIP.wav");
@@ -119,7 +110,14 @@ void setup_Muse_Reader() {
 void draw_Muse_Reader() {
     curr_time = current_time();
     fill(0);
-    // println(state);
+
+    if (!waiting_for_nod && detect_nod()) { // detect_nod strict
+        // nodded = false;
+        audio_cue[state][curr_clip].stop(); // Skip current audio
+        // audio_time = -1;
+        audio_time = curr_time - 10;
+        return;
+    }
 
     // State Machine
     switch (state) {
@@ -132,7 +130,7 @@ void draw_Muse_Reader() {
                 state_start_time--;
             }
             break;
-        case 1:
+        case 1: // FITTING
             if ((curr_time - state_start_time) > 2 && good_connection[1] && good_connection[2]) { // Sensors at the ears not fitted correctly
                 state_start_time = curr_time - 8;
                 play_audio(1);
@@ -149,46 +147,49 @@ void draw_Muse_Reader() {
             calibration_time =  curr_time - state_start_time;
             if (calibration_data_points >= 70)
                 change_state_when_finished();
-            // changeState(EXPLAINATION); //TODO testing only, skip calibration
             // TODO missing second audio
             break;
 
         case 3: // EXPLAINATION
-            if (curr_clip == 0 || waiting_for_nod) {
-                if (detect_nod()) {
-                    waiting_for_nod = false;
-                    nextClip();
-                    if (curr_clip + 1 >= number_of_clips[state]) changeState(MEDITATION);
-                }
+            if (curr_clip == 0 && detect_nod()) {
+                waiting_for_nod = false;
+                play_next_clip();
+            } else if (waiting_for_nod && detect_nod()) {
+                waiting_for_nod = false;
+                threshold = gyro_threshold_strict;
+                skip_step.stop();
+                play_next_clip();
+                println("NEXT!!");
+                if (curr_clip + 1 >= number_of_clips[state]) changeState(MEDITATION);
+            } else if (waiting_for_nod)
                 break;
-            }
 
             // Do nothing if the audio is still playing
             if (audio_cue[state][curr_clip].isPlaying()) break;
             // If audio stopped:
-            switch (curr_clip % 3) { //<>//
+            switch (curr_clip % 3) {
                 case 0:
                     if (curr_clip == 0)
-                        nextClip();
+                        play_next_clip();
                     else // clip = 3, 6
-                        wait_nod();
+                        start_wait_nod();
                     break;
                 case 1:  // clip = 1, 4 or 7
                     if (audio_time < 0)
                         audio_time = curr_time;
                     else if (audio_time > 0 && curr_time - audio_time > 3)    // wait for 3 seconds and play next clip
-                        nextClip();
+                        play_next_clip();
                     break;
                 case 2:  // clip = 2, 5, or 8
                     if (curr_clip == 8) {
-                        wait_nod();
+                        start_wait_nod();
                         break;
                     }
 
                     if (audio_time < 0)
                         audio_time = curr_time;
                     else if (audio_time > 0 && curr_time - audio_time > 5)    // wait for 5 seconds and play next clip
-                        nextClip();
+                        play_next_clip();
                     break;
             }
             break;
@@ -228,25 +229,21 @@ void draw_Muse_Reader() {
         text((good_connection[i]?"good":"bad"), 10, 10 + i * 15);
 
     // Draw bar chart
-    if (state == BCI) {
+    if (state == BCI)
         visualizeData(score);
-    }
     else
         visualizeData(absolute);
-        // visualizeData(gyroscope);
 }
 
 void keyReleased() {
-    if (key == ENTER)
-        // changeState(state + 1);
+    if (key == ENTER || key == RETURN)
        changeState(state+1==STATES.length?0:state+1);
-    else if (key == ' ') {
-        good_connection[1] = !good_connection[1];
-        good_connection[2] = !good_connection[2];
+    if (key == '\\')
+        changeState(state-1==-1?BCI:state-1);
+    else if (key == ' ') { // Space bar
+        toggle_headbands();
     }
-    else if (key == 's' && state == EXPLAINATION) {    // Skip the "tutorial", to meditation state
-        // curr_clip += 3;
-        // if (curr_clip > number_of_clips[EXPLAINATION])
+    else if (key == 's' && state == EXPLAINATION) { // Press 's' to skip the "tutorial"
         changeState(MEDITATION);
     }
 }
@@ -254,7 +251,6 @@ void keyReleased() {
 boolean detect_nod() {
     if (keyPressed && key == 'n') // manually press 'N' on keyboard to continue
         return true;
-
     if (nodded) {
         nodded = false;
         return true;
@@ -262,12 +258,15 @@ boolean detect_nod() {
     return false;
 }
 
-void wait_nod() {
+void start_wait_nod() {
+    // println(audio_time);
     if (audio_time < 0)
         audio_time = curr_time;
-    else if (audio_time > 0 && curr_time - audio_time > 3) {
+    else if (curr_time - audio_time > 3) {
         skip_step.play();
         waiting_for_nod = true;
+        threshold = gyro_threshold;
+        println("PLAYED!!");
     }
 }
 
@@ -282,7 +281,6 @@ void changeState(int new_state) {
 
     // Old State
     if (state == CALIBRATION) {
-        calibration_done.play();
         // Calculate average beta band from calibration
         beta_upper_limit = beta_sum / calibration_data_points;
         if (Float.isNaN(beta_upper_limit)) // || beta_upper_limit < 0.1
@@ -294,7 +292,7 @@ void changeState(int new_state) {
         println ("rect y = ", diagram_bottom_y);
 
         // Send beta_upper_limit to BrainDiagram as a baseline of the diagram
-        OscMessage baseline_msg = new OscMessage("Person0/baseline");
+        OscMessage baseline_msg = new OscMessage("Muse_black/data/baseline");
         baseline_msg.add(beta_upper_limit);
         OSC_send(baseline_msg);
     }
@@ -324,6 +322,8 @@ void changeState(int new_state) {
         rectY = 200;
     }
     else if (new_state == CALIBRATION) {
+        artBrainLoop.stop();
+        humBrainLoop.stop();
         audio_cue[state][0].play();
         humBrainLoop.loop(1);
     }
@@ -340,7 +340,7 @@ void changeState(int new_state) {
     }
 }
 
-void nextClip() {
+void play_next_clip() {
     if (curr_clip + 1 < number_of_clips[state]) {
         audio_cue[state][curr_clip].stop(); // Stop the current clip
         audio_cue[state][curr_clip + 1].play();
@@ -383,18 +383,18 @@ void oscEvent(OscMessage msg) {
 void collect_meditation(boolean has_beta_data) {
     if (!start_meditation) //  && beta_data_points >= beta.length Data array overflow
         return;
-    int timestamp = (millis() - milliseconds_start) / 100; // Precision set to 0.1 seconds
+    int timestamp = (millis() - milliseconds_start); // / 10; // Precision set to 0.01 seconds
     // Get rid of duplicate data
     // if (eeg[BETA] == prev_eeg)
     //     return;
 
-    OscMessage data_msg = new OscMessage("Person0/data/beta");
+    OscMessage data_msg = new OscMessage("Muse_black/data/beta");
     data_msg.add(absolute[BETA]);
     data_msg.add(timestamp);
     data_msg.add(is_good);
     OSC_send(data_msg);
 
-    data_msg = new OscMessage("Person0/data/alpha");
+    data_msg = new OscMessage("Muse_black/data/alpha");
     data_msg.add(absolute[ALPHA]);
     data_msg.add(timestamp);
     data_msg.add(is_good);
@@ -477,6 +477,7 @@ void getHeadbandStatus(OscMessage msg) {
         }
         // if (state ==  FITTING && sum_precision == 4) // 4 means all fitted
         //     changeState(CALIBRATION);
+        OSC_send(msg);
     }
 
     // Strict data quality indicator for each channel, 0 = bad, 1 = good
@@ -491,6 +492,7 @@ void getHeadbandStatus(OscMessage msg) {
 
         if (state ==  FITTING && is_good == 4) // 4 means all fitted
             changeState(CALIBRATION);
+        OSC_send(msg);
     }
 }
 
@@ -509,9 +511,11 @@ void getAbsolute(OscMessage msg) {
             beta_sum += absolute[BETA];
             calibration_data_points++;
 
-            if (calibration_time > 20 && calibration_data_points > 70) {
+            if (calibration_time > 20 && calibration_data_points >= 70) {
                 // changeState(EXPLAINATION);
-                curr_clip++;
+                // curr_clip++;
+                calibration_done.play();
+                play_next_clip();
             }
         }
     }
@@ -522,17 +526,14 @@ void getScore(OscMessage msg) {
     get_elements_data(msg, "session_score", score);
 }
 
-int gyro_threshold = 40; // How much do you need to move in order to trigger a "nod"
+
 /* Gyroscope data */
+final static int gyro_threshold = 30;  // Detect a nod after audio cues to continue
+final static int gyro_threshold_strict = 60; // Used to skip ANY audio cues
+int threshold = gyro_threshold_strict;       // Angular velocity required to trigger a "nod"
 void getGyroscope(OscMessage msg) {
     if (msg.checkAddrPattern(muse_name + "/gyro")) {
-        // println(msg);
-        // for (int i = 0; i < 3; i++) {
-        //     if (msg.checkTypetag("fff"))
-        //         gyroscope[i] = msg.get(i).floatValue();
-        // }
         float y = msg.get(1).floatValue();
-
         switch (gyro_state) {
             case 1: // Head up
                 if (y < 0) {
@@ -543,13 +544,13 @@ void getGyroscope(OscMessage msg) {
                 }
                 break;
             case -1: // Head down
-                if (y > gyro_threshold) {
+                if (y > threshold) {
                     gyro_state = 1;
                 }
                 break;
             case 0:
             default :
-                if (y < -1 * gyro_threshold) {
+                if (y < -1 * threshold) {
                     gyro_state = -1;
                 }
                 if (nod_counter > 0 && curr_time - nod_counter > 2) {
@@ -615,7 +616,6 @@ void getEEG(OscMessage msg){
     }
 }
 
-
 /* Blink */
 void getBlink(OscMessage msg) {
     if (msg.checkAddrPattern(muse_name + "/elements/blink")) {
@@ -644,17 +644,14 @@ float get_OSC_value(OscMessage msg, int index) {
 
 
 void OSC_send_state(int state) {
-  /* in the following different ways of creating osc messages are shown by example */
-  OscMessage myMessage = new OscMessage("Person0/state");
-  myMessage.add(state); /* add an int to the osc message */
-  /* send the message */
+  OscMessage myMessage = new OscMessage("Muse_black/state");
+  myMessage.add(state);
   oscP5.send(myMessage, muse_manager_address);
 }
 
 void OSC_send(OscMessage msg) {
   oscP5.send(msg, muse_manager_address);
 }
-
 
 /* Debug helper */
 void debugPrint(String s) {

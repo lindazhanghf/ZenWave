@@ -12,8 +12,9 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ConcurrentHashMap;
 
-// import codeanticode.syphon.*;
-// SyphonServer server;
+import codeanticode.syphon.*;
+SyphonServer server;
+final static boolean is_projecting = false;
 
 // Leap Motion Variables
 int currentState = 1;
@@ -62,7 +63,7 @@ void settings() {
 
 void setup() {
 //Syphon Server Setup (for projection)
-  // server = new SyphonServer(this, "Processing Syphon");
+  server = new SyphonServer(this, "Processing Syphon");
 
 // Images Setup
   brainCore = loadImage("brainMask.png");
@@ -114,13 +115,15 @@ void setup() {
   fingers = 5;
 
   setup_Muse_Reader();
+  muse_manager_setup();
 }
 
 
 ////////////////////////////////////////////////////////
 
 void draw() {
-  // server.sendScreen(); // Sending screen to MadMapper via Syphon
+  if (is_projecting)
+    server.sendScreen(); // Sending screen to MadMapper via Syphon
 
   // Background
   if(is_human_brain()) {
@@ -129,11 +132,6 @@ void draw() {
     background(255);
   }
 
-  // if (state == BCI)
-  //   // artBrainLoop.rate(abs(rectY / 1080) - 1.5);
-  //   // artBrainLoop.rate(absolute[ALPHA] + 0.5);
-  //   artBrainLoop.rate(1);
-  // else
   if (state > CALIBRATION) {
     // float rate = abs(1-absolute[BETA] - 1.8);
     float rate = abs(absolute[BETA] + 1 - beta_upper_limit);
@@ -237,47 +235,6 @@ class  Neuron {
 
   void drawSynapse() {
     int band = BETA; // Only visualize the Beta band
-    // switch (find_brain_sections(x, y)) {
-    //   case 3:
-    //     // band = ALPHA;
-    //     // if (good_connection[3]
-    //     if (hsi_precision[3] > 0 && hsi_precision[3] < 4) // <2
-    //       stroke(0 + (24 * 2), 255 + (24 * 2), 180 - (24 * 2), score[band] * 80 + 20);
-    //     else
-    //       stroke(150, score[band] * 80 + 20);
-    //     break;
-    //   case 2:
-    //     // band = BETA;
-    //     // if (good_connection[2]
-    //     if (hsi_precision[2] > 0 && hsi_precision[2] < 4) // <2
-    //       stroke(242, 242 - (24 / 2), 13 + 24, score[band] * 80 + 20);
-    //     else
-    //       stroke(150, score[band] * 80 + 20);
-    //     break;
-    //   case 1:
-    //     // band = GAMMA;
-    //     // if (good_connection[1]
-    //     if (hsi_precision[1] > 0 && hsi_precision[1] < 4) // <2
-    //       stroke(255 , 159 - (125 / 3), 102 - 125, score[band] * 80 + 20);
-    //     else
-    //       stroke(150, score[band] * 80 + 20);
-    //     break;
-    //   case 0:
-    //     // band = DELTA;
-    //     // if (good_connection[0]
-    //     if (hsi_precision[0] > 0 && hsi_precision[0] < 4) // <2
-    //       stroke(255,51,51 + (125 * 1.5),score[band] * 80 + 20);
-    //     else
-    //       stroke(150, score[band] * 80 + 20);
-    //     break;
-    //   default : // case 4
-    //     // band = THETA;
-    //     if (headband_on)
-    //       stroke(255, 128 - (125 / 2),0,score[band] * 80 + 20);
-    //     else
-    //       stroke(150, score[band] * 80 + 20);
-    //   break;
-    // }
     if (hsi_precision[2] > 0 && hsi_precision[2] < 4) // <2
       stroke(242, 242 - (24 / 2), 13 + 24, score[BETA] * 80 + 20);
     else

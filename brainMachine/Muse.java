@@ -4,10 +4,11 @@ class Muse {
 
     static ArrayList<Muse> list = new ArrayList<Muse>();
     static int counter;
+    static Muse in_use;
 
     int id;
     String name;
-    boolean in_use = false;
+    boolean using = false;
 
     // Data
     int[] hsi_precision = new int[4];
@@ -25,9 +26,18 @@ class Muse {
 
     static public void start_using(Muse muse) {
         for (Muse m : list) {
-            m.in_use = false;
+            m.using = false;
         }
-        muse.in_use = true;
+        muse.using = true;
+    }
+
+    static public Muse toggle() {
+        for (Muse m : list) {
+            m.using = !m.using;
+            if (m.using)
+                in_use = m;
+        }
+        return in_use;
     }
 
     void update() {
