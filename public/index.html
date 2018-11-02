@@ -5,7 +5,7 @@
         <script src="data.js"></script>
         <script src="modules/chart.js/Chart.bundle.js"></script>
         <script src="modules/chart.js/utils.js"></script>
-        <script src="reload/reload.js"></script>
+        <!-- <script src="reload/reload.js"></script> -->
         <script src="modules/socket.io/socket.io.js"></script>
         <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
         <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
@@ -49,6 +49,18 @@
     </div></div>
 
     <script>
+        // if (!baseline) var baseline = [];
+        // if (!alpha) var alpha = [];
+        // if (!beta) var beta = [];
+        // if (!beta_filled) var beta_filled = [];
+        if (!meditation_data) {
+            var meditation_data = {};
+            meditation_data.baseline = [];
+            meditation_data.alpha = [];
+            meditation_data.beta = [];
+            meditation_data.beta_filled = [];
+        }
+
         let transparent_color = '#252525'; // Background color
         let color_dark_blue = "#12575a";
         let color_cyan = "#7ad4be";
@@ -71,7 +83,7 @@
                     backgroundColor: transparent_color,
                     borderColor: color_yellow,
                     borderWidth: 2,
-                    data: beta,
+                    data: meditation_data.beta,
                 },
                 {
                     label: 'Alpha Brainwave',
@@ -81,7 +93,7 @@
                     backgroundColor: transparent_color,
                     borderColor: color_cyan,
                     borderWidth: 2,
-                    data: alpha,
+                    data: meditation_data.alpha,
                 },
                 {
                     label: 'Baseline',
@@ -91,7 +103,7 @@
                     backgroundColor: transparent_color,
                     borderColor: color_light_grey,
                     borderWidth: 2,
-                    data: baseline
+                    data: meditation_data.baseline
                 },
                 {
                      label: 'Relaxed',
@@ -101,7 +113,7 @@
                      backgroundColor: color_dark_blue,
                      borderColor: transparent_color,
                      borderWidth: 0,
-                     data: beta_filled,
+                     data: meditation_data.beta_filled,
                 },
                 ]
             },
@@ -183,10 +195,11 @@
                     backgroundColor: [
                         color_cyan,
                         color_yellow,
+                        "#2F353A"
                     ],
                     borderColor: transparent_color,
                     label: 'Dataset 1'
-                }],
+                },],
                 labels: [
                     'Relaxed',
                     'Alert',
@@ -218,6 +231,7 @@
                 tooltips: {
                     callbacks: {
                       label: function(tooltipItem, data) {
+                          if (tooltipItem.index > 1) return "";
                           return " " + data.datasets[tooltipItem.datasetIndex].data[tooltipItem.index] + " %";
                         }
                     }
@@ -231,7 +245,13 @@
 
             ctx = document.getElementById('line_chart').getContext('2d');
             window.myLine = new Chart(ctx, line_chart_config);
+            // load_line_chart();
         };
+
+        var line_ctx = document.getElementById('line_chart').getContext('2d');
+        // function load_line_chart() {
+        //     window.myLine = new Chart(line_ctx, line_chart_config);
+        // }
 
         /* Muse Manager */
         const muse = ["Muse_black", "Muse_white"];
@@ -249,6 +269,24 @@
                 else
                     document.getElementById(muse[i] + '_state').classList.remove("badge-background");
             }
+        });
+
+        socket.on('data', function(data) {
+            console.log(data);
+            meditation_data[data[0]].push(data[1]);
+            // load_line_chart();
+            window.myLine.update();
+            // if (data.is_beta) {
+            //     beta.push(data.beta)
+            //     beta.push(data.baseline)
+            // } else {
+            //     alpha.push(data.alpha)
+            //     beta_filled.push(data.filled);
+            //     if (data.filled)
+            //         result[0]++
+            //     else
+            //         result[1]++
+            // }
         });
 
         // black headband

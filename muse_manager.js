@@ -23,9 +23,6 @@ const EXPLAINATION = 3;   // Guide user through 3 different interactions
 const MEDITATION = 4;     // IF Meditation Mode
 const BCI = 5;            // Final state after "flipped"
 
-// var muse_black = Muse("Muse_black", "Muse_black");  // Make sure its the same as in Muse_Manager
-// var muse_white = Muse("/muse", "Muse_white");       // Make sure its the same as in Muse_Manager
-
 var muses = [];
 muses.push(Muse("Muse_black", "Muse_black"));
 muses.push(Muse("/muse", "Muse_white"));
@@ -47,11 +44,6 @@ oscServer.on("message", function (msg, rinfo) {
         if (msg[0].includes(muses[i].address))
             parse(muses[i], msg);
     }
-    // if (msg[0].includes(muse_black.address)) {
-    //     parse(muse_black, msg);
-    // } else if (msg[0].includes(muse_white.address)) {
-    //     parse(muse_white, msg);
-    // }
 });
 
 io.on('connection', function(socket){
@@ -72,21 +64,21 @@ function parse(muse, msg) {
 
     if (msg[0].includes("state")) {
         muse.state = msg[1];
-        console.log(muse.prefix + " enters state " + state_name[muse.state]);
+        console.log("[" + muse.prefix + "] enters state " + state_name[muse.state]);
         io.emit(muse.prefix+'_state', muse.state);
 
         if (muse.state == CALIBRATION) {
             reset_data(muse);
-        }
-        if (muse.state == 5) {
+        } else if (muse.state == MEDITATION) {
+            write_blank_data();
+        } else if (muse.state == BCI) {
             console.log(muse.data[1].array); // Testing
             write_data(muse);
-            // io.emit('toggle_on', muse.prefix);
         }
 
     } else if (msg[0].includes("toggle_on")) {
         io.emit('toggle_on', muse.prefix);
-        console.log("Start using ", muse.prefix);
+        console.log("Start using [" + muse.prefix + "]");
 
         for (var i = 0; i < muses.length; i++) { muses[i].in_use = false; }
         muse.in_use = true;
@@ -130,66 +122,65 @@ function parse(muse, msg) {
         let alpha = muse.data[0];
         let beta = muse.data[1];
         if (msg[0].includes("data/alpha")) {
-            save_data(alpha, msg);
+            save_data(alpha, msg, 'alpha');
 
             let curr_beta = beta.array[beta.array.length-1].y;
             if (curr_beta != NaN && curr_beta < msg[1] && curr_beta < muse.baseline) {
                 let d = {x:msg[2]/1000, y:curr_beta};
                 beta.array_filled.push(d);
+                io.emit('data', ['beta_filled', d])
                 muse.num_relaxed++;
                 return;
             } else if (curr_beta != NaN) // Don't count the points if the user is moving (NaN)
                 muse.num_alert++;
 
             beta.array_filled.push({x: msg[2]/1000, y: NaN});
+            io.emit('data', ['beta_filled', {x: msg[2]/1000, y: NaN}]);
 
         } else if (msg[0].includes("data/beta")) {
-            save_data(beta, msg);
-            // muse.timestamps.push(msg[2]/1000); // In seconds
+            save_data(beta, msg, 'beta');
             muse.baseline_array.push({x: msg[2]/1000, y: muse.baseline});
+            io.emit('data', ['baseline', {x: msg[2]/1000, y: muse.baseline}]);
         }
     }
 }
 
 /* Data osc message format: data, timestamp, is_good */
-function save_data(muse_data, msg) {
-    if ((msg[3]) > 2) {
-        muse_data.array.push({x: msg[2]/1000, y: msg[1]});
-    } else {
-        muse_data.array.push({x: msg[2]/1000, y: NaN});
-    }
+function save_data(muse_data, msg, name) {
+    let d = ((msg[3]) > 2) ? msg[1] : NaN;
+    muse_data.array.push({x: msg[2]/1000, y: d});
+    io.emit('data', [name, {x: msg[2]/1000, y: d}]);
+    // if ((msg[3]) > 2) {
+    //     muse_data.array.push({x: msg[2]/1000, y: msg[1]});
+    //     io.emit('data', [muse_data.array.name, {x: msg[2]/1000, y: msg[1]});
+    // } else {
+    //     muse_data.array.push({x: msg[2]/1000, y: NaN});
+    //     io.emit('data', [muse_data.array.name, {x: msg[2]/1000, y: NaN});
+    // }
 
-    muse_data.array_dashed.push({x: msg[2]/1000, y: msg[1]});
+    // muse_data.array_dashed.push({x: msg[2]/1000, y: msg[1]});
     console.log("Save data - ", msg[1]);
 }
 
 function write_data(muse) {
-    let content = "";
-    // content += "var timestamps = " + JSON.stringify(muse.timestamps) + ";\n";
-    content += "var baseline = " + JSON.stringify(muse.baseline_array) + ";\n";
+    let content = 'meditation_data = {';
+    content += '"baseline" : ' + JSON.stringify(muse.baseline_array) + ',\n';
     let alpha = muse.data[0];
-    content += "var alpha = " + JSON.stringify(alpha.array) + ";\n";
-    content += "var alpha_dashed = " + JSON.stringify(alpha.array_dashed) + ";\n";
+    content += '"alpha" : ' + JSON.stringify(alpha.array) + ',\n';
     let beta = muse.data[1];
-    content += "var beta = " + JSON.stringify(beta.array) + ";\n";
-    content += "var beta_dashed = " + JSON.stringify(beta.array_dashed) + ";\n";
-    content += "var beta_filled = " + JSON.stringify(beta.array_filled) + ";\n";
+    content += '"beta" : ' + JSON.stringify(beta.array) + ',\n';
+    content += '"beta_filled" : ' + JSON.stringify(beta.array_filled) + ',\n';
+    content += '}\n';
     let valid_data = (muse.num_alert + muse.num_relaxed) / 1000; // To calculate percentage [Meditation Result]
-    content += "var result = " + JSON.stringify([Math.round(muse.num_relaxed/valid_data)/10, Math.round(muse.num_alert/valid_data)/10]) + ";\n";
-    console.log("Meditation result: ", muse.num_alert, muse.num_relaxed);
+    content += 'var result = ' + JSON.stringify([Math.round(muse.num_relaxed/valid_data)/10, Math.round(muse.num_alert/valid_data)/10, 0]) + ';\n';
+    console.log('Meditation result: ', muse.num_alert, muse.num_relaxed);
+    write_file(content);
+}
 
-    // content += "var headband_in_use = " + JSON.stringify(muse.prefix) + ";\n";
-    // for (var i = 0; i < muses.length; i++) {
-    //     content += "var " + muse.prefix + "_connection = " + JSON.stringify(muses.connection_info) + ";\n";
-    // }
-
-    // write to a file named data.js to be used by html to display data
-    fs.writeFile('public/data.js', content, (err) => {
-        if (err) throw err;
-        console.log('Write data sucess.');
-        return true;
-    });
-    return false; // fail to write file
+function write_blank_data() {
+    let content = '';
+    content += "var result = " + JSON.stringify([0, 0, 1]);
+    write_file(content);
 }
 
 function write_connection_info() {
@@ -197,12 +188,7 @@ function write_connection_info() {
     content += "var connection_muse_black = " + JSON.stringify(muse_black.connection_info) + ";\n";
     content += "var connection_muse_white = " + JSON.stringify(muse_white.connection_info) + ";\n";
     // write to a file named connection_info.js to be used by html to display data
-    fs.writeFile('public/connection_info.js', content, (err) => {
-        if (err) throw err;
-        console.log('Write data sucess.');
-        return true;
-    });
-    return false; // fail to write file
+    write_file(content);
 }
 
 function reset_data(muse) {
@@ -219,4 +205,15 @@ function muse_data() {
     data.array_dashed = [];
     data.array_filled = []; // Periods that the user achieved a state of peace
     return data;
+}
+
+function write_file(content) {
+    // write to a file named data.js to be used by html to display data
+    fs.writeFile('public/data.js', content, (err) => {
+        if (err) throw err;
+        console.log('Write data sucess.');
+        return true;
+    });
+    return false; // fail to write file
+
 }
