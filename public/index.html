@@ -2,7 +2,7 @@
 <html>
 <head>
     <title>Brain Diagram</title>
-        <script src="data.js"></script>
+        <!-- <script src="data.js"></script> -->
         <script src="modules/chart.js/Chart.bundle.js"></script>
         <script src="modules/chart.js/utils.js"></script>
         <!-- <script src="reload/reload.js"></script> -->
@@ -53,19 +53,23 @@
         // if (!alpha) var alpha = [];
         // if (!beta) var beta = [];
         // if (!beta_filled) var beta_filled = [];
-        if (!meditation_data) {
+        // if (!meditation_data) {
             var meditation_data = {};
             meditation_data.baseline = [];
             meditation_data.alpha = [];
             meditation_data.beta = [];
             meditation_data.beta_filled = [];
-        }
+        // }
+        var result = [0, 0, 0.1]
 
         let transparent_color = '#252525'; // Background color
         let color_dark_blue = "#12575a";
         let color_cyan = "#7ad4be";
         let color_light_grey = "#a7c1c4";
         let color_yellow = "#fbac33";
+
+        var myLine;
+        var myDoughnut;
 
         Chart.defaults.global.defaultFontColor = '#fff';
         Chart.defaults.global.defaultFontFamily = "'Montserrat', sans-serif";
@@ -240,18 +244,12 @@
             }
         };
         window.onload = function() {
-            var ctx = document.getElementById('doughnut_chart').getContext('2d');
-            window.myDoughnut = new Chart(ctx, doughnut_chart_config);
+            let ctx = document.getElementById('doughnut_chart').getContext('2d');
+            myDoughnut = new Chart(ctx, doughnut_chart_config);
 
             ctx = document.getElementById('line_chart').getContext('2d');
-            window.myLine = new Chart(ctx, line_chart_config);
-            // load_line_chart();
+            myLine = new Chart(ctx, line_chart_config);
         };
-
-        var line_ctx = document.getElementById('line_chart').getContext('2d');
-        // function load_line_chart() {
-        //     window.myLine = new Chart(line_ctx, line_chart_config);
-        // }
 
         /* Muse Manager */
         const muse = ["Muse_black", "Muse_white"];
@@ -274,20 +272,28 @@
         socket.on('data', function(data) {
             console.log(data);
             meditation_data[data[0]].push(data[1]);
-            // load_line_chart();
-            window.myLine.update();
-            // if (data.is_beta) {
-            //     beta.push(data.beta)
-            //     beta.push(data.baseline)
-            // } else {
-            //     alpha.push(data.alpha)
-            //     beta_filled.push(data.filled);
-            //     if (data.filled)
-            //         result[0]++
-            //     else
-            //         result[1]++
-            // }
+            myLine.update();
         });
+
+        socket.on('meditation_result', function(data) {
+            console.log('meditation_result', data);
+            for (var i = 0; i < 3; i++)
+                result[i] = data[i];
+            myDoughnut.update();
+        });
+
+        function reset_data() {
+            console.log('Clear all data! TODO DEBUG!!!!!!!!!');
+
+            // meditation_data = {};
+            // meditation_data.baseline = [];
+            // meditation_data.alpha = [];
+            // meditation_data.beta = [];
+            // meditation_data.beta_filled = [];
+            // result = [0, 0, 0.1];
+            // if (myDoughnut) myDoughnut.update();
+            // if (myLine) myLine.update();
+        }
 
         // black headband
         var context_black = document.getElementById('canvas-black').getContext('2d');
@@ -297,11 +303,12 @@
             let width = 600;
             let height = 414;
             context_black.drawImage(image_black, 0, 0, width, height);
-            // draw_connection_info(context_black, Muse_black_connection);
         };
         socket.on('Muse_black_state', function (data) {
             // console.log("Muse black state:" , data);
             document.getElementById('Muse_black_state').innerHTML = state_name[data];
+            if (state_name[data] == 'meditation') // BCI
+                reset_data();
           });
         socket.on('Muse_black_connection', function (data) {
             // console.log("Muse black:" , data);
@@ -316,11 +323,12 @@
             let width = 600;
             let height = 414;
             context_white.drawImage(image_white, 0, 0, width, height);
-            // draw_connection_info(context_white, Muse_white_connection);
         };
         socket.on('Muse_white_state', function (data) {
             // console.log("Muse white state:" , data);
             document.getElementById('Muse_white_state').innerHTML = state_name[data];
+            if (state_name[data] == 'meditation') // BCI
+                reset_data();
           });
         socket.on('Muse_white_connection', function (data) {
             // console.log("Muse white:" , data);

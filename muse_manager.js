@@ -70,10 +70,12 @@ function parse(muse, msg) {
         if (muse.state == CALIBRATION) {
             reset_data(muse);
         } else if (muse.state == MEDITATION) {
-            write_blank_data();
+            // write_blank_data();
+            io.emit('clear_data');
         } else if (muse.state == BCI) {
             console.log(muse.data[1].array); // Testing
-            write_data(muse);
+            // write_data(muse);
+            calculate_meditation_result(muse);
         }
 
     } else if (msg[0].includes("toggle_on")) {
@@ -145,21 +147,19 @@ function parse(muse, msg) {
     }
 }
 
+function calculate_meditation_result(muse) {
+    let valid_data = (muse.num_alert + muse.num_relaxed) / 1000;
+    let result = [Math.round(muse.num_relaxed/valid_data)/10, Math.round(muse.num_alert/valid_data)/10, 0];
+    io.emit('meditation_result', [Math.round(muse.num_relaxed/valid_data)/10, Math.round(muse.num_alert/valid_data)/10, 0]);
+    console.log('mediation result: ', result.toString() )
+}
+
 /* Data osc message format: data, timestamp, is_good */
 function save_data(muse_data, msg, name) {
     let d = ((msg[3]) > 2) ? msg[1] : NaN;
     muse_data.array.push({x: msg[2]/1000, y: d});
     io.emit('data', [name, {x: msg[2]/1000, y: d}]);
-    // if ((msg[3]) > 2) {
-    //     muse_data.array.push({x: msg[2]/1000, y: msg[1]});
-    //     io.emit('data', [muse_data.array.name, {x: msg[2]/1000, y: msg[1]});
-    // } else {
-    //     muse_data.array.push({x: msg[2]/1000, y: NaN});
-    //     io.emit('data', [muse_data.array.name, {x: msg[2]/1000, y: NaN});
-    // }
-
-    // muse_data.array_dashed.push({x: msg[2]/1000, y: msg[1]});
-    console.log("Save data - ", msg[1]);
+    console.log("Save " + name + " data - ", msg[1]);
 }
 
 function write_data(muse) {
