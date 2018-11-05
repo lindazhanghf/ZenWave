@@ -254,7 +254,7 @@
         /* Muse Manager */
         const muse = ["Muse_black", "Muse_white"];
         const state_name = ["idle", "fitting", "calibration", "tutorial", "meditation", "result", "end"];
-        var socket = io('http://127.0.0.1:8888');
+        var socket = io('http://127.0.0.1:9999');
         socket.on('connect',function() {
           console.log('Client has connected to the server!');
         });
@@ -283,16 +283,16 @@
         });
 
         function reset_data() {
-            console.log('Clear all data! TODO DEBUG!!!!!!!!!');
-
-            // meditation_data = {};
-            // meditation_data.baseline = [];
-            // meditation_data.alpha = [];
-            // meditation_data.beta = [];
-            // meditation_data.beta_filled = [];
-            // result = [0, 0, 0.1];
-            // if (myDoughnut) myDoughnut.update();
-            // if (myLine) myLine.update();
+            console.log('Clear all data!');
+            meditation_data.baseline.splice(0, meditation_data.baseline.length);
+            meditation_data.alpha.splice(0, meditation_data.alpha.length);
+            meditation_data.beta.splice(0, meditation_data.beta.length);
+            meditation_data.beta_filled.splice(0, meditation_data.beta_filled.length);
+            result[0] = 0;
+            result[1] = 0;
+            result[2] = 0.1;
+            if (myDoughnut) myDoughnut.update();
+            if (myLine) myLine.update();
         }
 
         // black headband
@@ -307,6 +307,7 @@
         socket.on('Muse_black_state', function (data) {
             // console.log("Muse black state:" , data);
             document.getElementById('Muse_black_state').innerHTML = state_name[data];
+            console.log(state_name[data]);
             if (state_name[data] == 'meditation') // BCI
                 reset_data();
           });
