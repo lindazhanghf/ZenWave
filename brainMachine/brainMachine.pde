@@ -132,7 +132,7 @@ void draw() {
     background(255);
   }
 
-  if (state > CALIBRATION && absolute[BETA] > -0.5 && absolute[BETA] < 2) {
+  if (Muse.in_use.state > CALIBRATION && absolute[BETA] > -0.5 && absolute[BETA] < 2) {
     // float rate = abs(1-absolute[BETA] - 1.8);
     float rate = abs(absolute[BETA] + 1 - beta_upper_limit);
     humBrainLoop.rate(rate);
@@ -234,7 +234,7 @@ class  Neuron {
 
 
   void drawSynapse() {
-    float beta_score = (state > CALIBRATION) ? score[BETA] : 0;
+    float beta_score = (Muse.in_use.state > CALIBRATION) ? score[BETA] : 0;
     // beta_score =  beta_score / 10 * 8 + 0.1;
     if (beta_score < 0) beta_score = 0;
     if (hsi_precision[2] > 0 && hsi_precision[2] < 4) // <2
@@ -289,7 +289,7 @@ class  Neuron {
   void drawNeuron () {
 
     if (!idleChange) {
-      if (state > IDLE)
+      if (Muse.in_use.state > IDLE)
         drawSignal();
 
       drawSynapse();
@@ -299,8 +299,8 @@ class  Neuron {
     xx += (x-xx) / 8.0; // Speed of re-organization of neurons
     yy += (y-yy) / 8.0; // Speed of re-organization of neurons
 
-    // if (state < DETECTION)
-    if (randomly_moving && state < FITTING)
+    // if (Muse.in_use.state < DETECTION)
+    if (randomly_moving && Muse.in_use.state < FITTING)
       randomMovement(); // Uncomment this to enable movement of neural networks
   }
 
@@ -399,7 +399,7 @@ class Signal {
 //////////////// END OF PARAMETERS
 
           // Position & Size of explosion
-          if (state > CALIBRATION)
+          if (Muse.in_use.state > CALIBRATION)
             ellipse(x, y, (abs((absolute[BETA] + 0.3 - beta_upper_limit) * 5)) * i, (abs((absolute[BETA] + 0.3 - beta_upper_limit) * 5)) * i);
 
           popStyle();

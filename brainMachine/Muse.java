@@ -9,6 +9,7 @@ class Muse {
     int id;
     String name;
     boolean using = false;
+    int state = 0;
 
     // Data
     int[] hsi_precision = new int[4];
@@ -44,10 +45,4 @@ class Muse {
         }
         return in_use;
     }
-
-    // void update() {
-
-    // }
-
-
 }
