@@ -5,7 +5,7 @@
 // OSC data streamming
 import oscP5.*;
 import netP5.*;
-final static int recvPort = 8980;
+final static int recvPort = 7000;
 OscP5 oscP5;
 // Send data to nodeJS server (visualization)
 final static NetAddress muse_diagram_address = new NetAddress("127.0.0.1", 7980);
@@ -43,7 +43,7 @@ final static int[] number_of_clips = {1, 2, 2, 9, 3};
 SoundFile[][] audio_cue = new SoundFile[5][];
 SoundFile calibration_done;
 SoundFile skip_step;
-int curr_clip;  // The current clip playing
+int curr_clip;       // The current clip playing
 int audio_time = -1; // Time when audio is done; to keep track of when to play the next clip
 boolean waiting_for_nod = false;
 
@@ -51,7 +51,7 @@ boolean waiting_for_nod = false;
 int[] hsi_precision = new int[4];
 float[] absolute = new float[5];
 float[] score = new float[5];
-float[] eeg;
+float[] eeg = new float[4];
 boolean[] good_connection = new boolean[4];
 int fitting_index;
 boolean has_data = false;
@@ -107,9 +107,7 @@ void draw_Muse_Reader() {
     // println( milliseconds_start, millis() - milliseconds_start);
 
     if (Muse.in_use.state > FITTING && Muse.in_use.state < BCI && !waiting_for_nod && detect_nod()) { // detect_nod strict
-        // nodded = false;
         audio_cue[Muse.in_use.state][curr_clip].stop(); // Skip current audio
-        // audio_time = -1;
         audio_time = curr_time - 10;
         return;
     }
@@ -126,8 +124,10 @@ void draw_Muse_Reader() {
             }
             break;
         case 1: // FITTING
-            if ((curr_time - state_start_time) > 2 && good_connection[1] && good_connection[2]) { // Sensors at the ears not fitted correctly
-                state_start_time = curr_time - 8;
+            if (fitting_index >= 4 || audio_cue[Muse.in_use.state][curr_clip].isPlaying())
+                break;
+
+            if ((curr_time - state_start_time) % 10 == 0 && good_connection[1] && good_connection[2]) { // Sensors at the ears not fitted correctly
                 play_audio(1);
                 curr_clip = 1;
                 break;
@@ -217,25 +217,24 @@ void draw_Muse_Reader() {
         default:
             break;
     }
-    // println(curr_time);
 
     if ((curr_time - state_start_time) % 5 == 0)
         randomly_moving = false;
 
     // Testing
-    text("State:", 800, 15);
-    text(STATES[Muse.in_use.state], 850, 15);
-    text(curr_clip, 950, 15);
+    // text("State:", 800, 15);
+    // text(STATES[Muse.in_use.state], 850, 15);
+    // text(curr_clip, 950, 15);
 
-    if (calm_start_time > 0) text(curr_time - calm_start_time, 900,40);
-    else text(curr_time - state_start_time, 900,40);
-    text(beta_upper_limit, 900,25);
+    // if (calm_start_time > 0) text(curr_time - calm_start_time, 900,40);
+    // else text(curr_time - state_start_time, 900,40);
+    // text(beta_upper_limit, 900,25);
 
-    text(calibration_data_points, 930, 40);
-    text("#data " + beta_data_points, 900, 55);
+    // text(calibration_data_points, 930, 40);
+    // text("#data " + beta_data_points, 900, 55);
 
-    for (int i = 0; i < 4; i++)
-        text((good_connection[i]?"good":"bad"), 10, 10 + i * 15);
+    // for (int i = 0; i < 4; i++)
+    //     text((good_connection[i]?"good":"bad"), 10, 10 + i * 15);
 
     // // Draw bar chart
     // if (Muse.in_use.state == BCI)
@@ -273,7 +272,6 @@ boolean detect_nod() {
 }
 
 void start_wait_nod() {
-    // println(audio_time);
     if (audio_time < 0)
         audio_time = curr_time;
     else if (curr_time - audio_time > 3) {
@@ -324,19 +322,18 @@ void changeState(int new_state) {
     }
 
     // Stop previous audio
-    // println(Muse.in_use.state, curr_clip);
     if (Muse.in_use.state < number_of_clips.length && curr_clip < number_of_clips[Muse.in_use.state])
         audio_cue[Muse.in_use.state][curr_clip].stop();
 
+    // Change to new state
     print(STATES[Muse.in_use.state], "lasted for", (curr_time - state_start_time), "seconds | ");
     println("Change to new State: ", STATES[new_state]);
-    Muse.in_use.state = new_state;
+    change_state(Muse.in_use, new_state);
     state_start_time = curr_time;
     curr_clip = 0;
     nodded = false;
 
     if (new_state == IDLE) {
-        // audio_cue[Muse.in_use.state][0].play();
         resetBrain();
         artBrainLoop.stop();
         humBrainLoop.stop();
@@ -364,7 +361,6 @@ void changeState(int new_state) {
         artBrainLoop.loop(1);
         rectY = 50;
     }
-    change_state(Muse.in_use, new_state);
 }
 
 void play_next_clip() {
@@ -396,7 +392,6 @@ void change_state_when_finished() {
 void collect_meditation(boolean has_beta_data) {
     if (!start_meditation)
         return;
-    // beta_data_points++; // Debug
     int timestamp = (millis() - milliseconds_start);
 
     OscMessage data_msg = new OscMessage(Muse.in_use.name + "/data/beta");
@@ -488,7 +483,6 @@ void getHeadbandStatus(OscMessage msg, Muse muse) {
             hsi_precision[i] = (int)get_OSC_value(msg, i);
             if (muse.name == "/muse") {
                 good_connection[i] = hsi_precision[i] == 1;
-                // print(hsi_precision[i], " ");
             }
 
             if (Muse.in_use.state == DETECTION && hsi_precision[i] > 2)
@@ -517,8 +511,8 @@ void calculate_fitting_index() {
         if (good_connection[i])
             fitting_index++;
     }
-    if (Muse.in_use.state ==  FITTING && fitting_index == 4)
-        changeState(CALIBRATION);
+    // if (Muse.in_use.state ==  FITTING && fitting_index == 4)
+    //     changeState(CALIBRATION);
 }
 
 /* Absolute Band Power */
@@ -537,7 +531,6 @@ void getAbsolute(OscMessage msg, String muse_name) {
             calibration_data_points++;
 
             if (calibration_time > 25 && calibration_data_points >= 70) {
-                // changeState(EXPLAINATION);
                 calibration_done.play();
                 play_next_clip();
             }
@@ -564,24 +557,30 @@ void getGyroscope(OscMessage msg, String muse_name) {
                     gyro_position = 0;
                     nodded = true;
                     nod_counter = curr_time;
-                    println("Nodded~~~~~~");
+                    println("Nodded");
+                    return;
                 }
                 break;
             case -1: // Head down
                 if (y > threshold) {
                     gyro_position = 1;
+                    return;
                 }
                 break;
             case 0:
             default :
                 if (y < -1 * threshold) {
                     gyro_position = -1;
+                    nod_counter = curr_time;
+                    return;
                 }
-                if (nod_counter > 0 && curr_time - nod_counter > 2) {
-                    nodded = false;
-                    nod_counter = 0;
-                }
-            break;
+                break;
+        }
+        // Reset if nothing happens after 1 second (could be an imcomplete nod)
+        if (nod_counter > 0 && curr_time - nod_counter > 1) {
+            nodded = false;
+            nod_counter = 0;
+            gyro_position = 0;
         }
     }
 }
@@ -729,8 +728,6 @@ int current_time() {
 
 /* get float value from "ffff" or double value from "dddd" OSC data */
 float get_OSC_value(OscMessage msg, int index) {
-    // if (debugOSC)
-    //     println("Try get 4 floats/doubles");
     if (msg.checkTypetag("ffff"))
         return msg.get(index).floatValue();
     if (msg.checkTypetag("dddd"))

@@ -38,10 +38,12 @@ class Muse {
     }
 
     static public Muse toggle() {
-        for (Muse m : list) {
-            m.using = !m.using;
-            if (m.using)
-                in_use = m;
+        if (counter > 1) {
+            for (Muse m : list) {
+                m.using = !m.using;
+                if (m.using)
+                    in_use = m;
+            }
         }
         return in_use;
     }

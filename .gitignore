@@ -29,6 +29,7 @@ Temporary Items
 
 
 ## Node.js GitIgnore:
+package-lock.json
 # Logs
 logs
 *.log

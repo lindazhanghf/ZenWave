@@ -13,10 +13,10 @@ final static boolean debugOSC = false;
 void muse_manager_setup() {
     // Take the first muse as the default:
     Muse default_headband =
-    new Muse("Muse_black");    // Connected via Muse Direct (Win 10)
-    new Muse("/muse"); 	       // Default setting of Muse Monitor app
-    // new Muse("Person0");       // Default setting of Muse Direct (Win 10)
-    // new Muse("Muse_white");    // Connected via Muse Direct (Win 10)
+    new Muse("Muse_black");    // Connected via Muse Direct
+    // new Muse("Muse_white");    // Connected via Muse Direct
+    // new Muse("Person0");       // Default setting of Muse Direct (Person0/1/2)
+    // new Muse("/muse");         // Default setting of Muse Monitor app
     Muse.start_using(default_headband);
 }
 
@@ -47,7 +47,7 @@ void toggle_headbands() {
 	OscMessage myMessage = new OscMessage(start_using.name + "/toggle_on");
 	myMessage.add(0);
 	oscP5.send(myMessage, muse_diagram_address);
-    changeState(IDLE);
+    // changeState(IDLE);
 }
 
 
