@@ -1,11 +1,10 @@
 {
-    "name": "MuseManager",
-    "version": "0.1",
+    "name": "MuseDiagram",
     "dependencies": {
         "chart.js": "^2.7.3",
         "express": "^4.16.4",
         "node-osc": "^2.1.0",
-        // "node-static": "^0.7.11",
+        "opn": "^5.4.0",
         "reload": "^2.3.1",
         "socket.io": "^2.1.1"
     },

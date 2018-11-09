@@ -1,3 +1,4 @@
+const opn = require('opn');
 var fs = require('fs');
 var app = require('express')()
 var http = require('http').Server(app);
@@ -10,6 +11,8 @@ http.listen(8888, function(){
 // Run child process to refresh the charts when new data comes in
 const { exec } = require('child_process');
 exec('./node_modules/reload/bin/reload -p 3000 -d ./public/')
+
+opn('http://localhost:3000/')
 
 var osc = require('node-osc');
 var oscServer = new osc.Server(7980, '127.0.0.1');

@@ -34,32 +34,27 @@
             <canvas id="line_chart"></canvas>
             </div>
             <div class="panel container-fluid row" style="height:400px" style="padding:0">
+                <div class="col-md-3"></div>
                 <div class="col-md-6">
-                    <p class="small-title" style="font">#1 headband </p>
+                    <p class="small-title" style="font">Muse Headband </p>
                     <canvas class="muse-canvas"  width="600" height="414" id="canvas-black"></canvas>
                     <p class="white-text" id="Muse_black_state" style="font">Idle</p>
-                </div><div class="col-md-6">
+                </div><div style="display: none" class="col-md-6">
                     <p class="small-title" style="font">#2 headband</p>
                     <canvas class="muse-canvas"  width="600" height="414" id="canvas-white"></canvas>
                     <p class="white-text" id="Muse_white_state" style="font">Idle</p>
                 </div>
-
+                <div class="col-md-3"></div>
             </div>
         </div>
     </div></div>
 
     <script>
-        // if (!baseline) var baseline = [];
-        // if (!alpha) var alpha = [];
-        // if (!beta) var beta = [];
-        // if (!beta_filled) var beta_filled = [];
-        // if (!meditation_data) {
-            var meditation_data = {};
-            meditation_data.baseline = [];
-            meditation_data.alpha = [];
-            meditation_data.beta = [];
-            meditation_data.beta_filled = [];
-        // }
+        var meditation_data = {};
+        meditation_data.baseline = [];
+        meditation_data.alpha = [];
+        meditation_data.beta = [];
+        meditation_data.beta_filled = [];
         var result = [0, 0, 0.1]
 
         let transparent_color = '#252525'; // Background color
@@ -254,7 +249,7 @@
         /* Muse Manager */
         const muse = ["Muse_black", "Muse_white"];
         const state_name = ["idle", "fitting", "calibration", "tutorial", "meditation", "result", "end"];
-        var socket = io('http://127.0.0.1:9999');
+        var socket = io('http://127.0.0.1:8888');
         socket.on('connect',function() {
           console.log('Client has connected to the server!');
         });
@@ -270,7 +265,7 @@
         });
 
         socket.on('data', function(data) {
-            console.log(data);
+            // console.log(data);
             meditation_data[data[0]].push(data[1]);
             myLine.update();
         });
