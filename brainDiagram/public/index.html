@@ -1,0 +1,364 @@
+<!doctype html>
+<html>
+<head>
+    <title>Brain Diagram</title>
+        <!-- <script src="data.js"></script> -->
+        <script src="modules/chart.js/Chart.bundle.js"></script>
+        <script src="modules/chart.js/utils.js"></script>
+        <!-- <script src="reload/reload.js"></script> -->
+        <script src="modules/socket.io/socket.io.js"></script>
+        <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
+        <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+        <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css" integrity="  sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO" crossorigin="anonymous">
+        <link href="main.css" rel="stylesheet">
+    <style>
+    canvas{
+        -moz-user-select: none;
+        -webkit-user-select: none;
+        -ms-user-select: none;
+    }
+    </style>
+</head>
+
+<body style="background-color: #2F353A">
+    <div class="container-fluid"><div class="row">
+        <div class="col-md-5"><div class="panel" style="height:auto;padding-top: 18em;padding-bottom: 18em">
+            <p class="title" style="font">MEDITATION RESULT</p>
+            <div>
+                <canvas style="height:auto" id="doughnut_chart"></canvas>
+            </div>
+        </div></div>
+        <div class="col-md-7">
+            <div class="panel" style="height:auto">
+            <p class="title" style="font">MEDITATION DATA</p>
+            <canvas id="line_chart"></canvas>
+            </div>
+            <div class="panel container-fluid row" style="height:400px" style="padding:0">
+                <div class="col-md-6">
+                    <p class="small-title" style="font">#1 headband </p>
+                    <canvas class="muse-canvas"  width="600" height="414" id="canvas-black"></canvas>
+                    <p class="white-text" id="Muse_black_state" style="font">Idle</p>
+                </div><div class="col-md-6">
+                    <p class="small-title" style="font">#2 headband</p>
+                    <canvas class="muse-canvas"  width="600" height="414" id="canvas-white"></canvas>
+                    <p class="white-text" id="Muse_white_state" style="font">Idle</p>
+                </div>
+
+            </div>
+        </div>
+    </div></div>
+
+    <script>
+        // if (!baseline) var baseline = [];
+        // if (!alpha) var alpha = [];
+        // if (!beta) var beta = [];
+        // if (!beta_filled) var beta_filled = [];
+        // if (!meditation_data) {
+            var meditation_data = {};
+            meditation_data.baseline = [];
+            meditation_data.alpha = [];
+            meditation_data.beta = [];
+            meditation_data.beta_filled = [];
+        // }
+        var result = [0, 0, 0.1]
+
+        let transparent_color = '#252525'; // Background color
+        let color_dark_blue = "#12575a";
+        let color_cyan = "#7ad4be";
+        let color_light_grey = "#a7c1c4";
+        let color_yellow = "#fbac33";
+
+        var myLine;
+        var myDoughnut;
+
+        Chart.defaults.global.defaultFontColor = '#fff';
+        Chart.defaults.global.defaultFontFamily = "'Montserrat', sans-serif";
+        Chart.defaults.global.defaultFontStyle = "Light";
+        var utils = Samples.utils;
+        var presets = window.chartColors;
+        var line_chart_config = {
+            type: 'line',
+            data: {
+                datasets: [
+                {
+                    label: 'Beta Brainwave',
+                    fill: false,
+                    pointRadius: 0,
+                    backgroundColor: transparent_color,
+                    borderColor: color_yellow,
+                    borderWidth: 2,
+                    data: meditation_data.beta,
+                },
+                {
+                    label: 'Alpha Brainwave',
+                    // fill: 0,
+                    fill: false,
+                    pointRadius: 0,
+                    backgroundColor: transparent_color,
+                    borderColor: color_cyan,
+                    borderWidth: 2,
+                    data: meditation_data.alpha,
+                },
+                {
+                    label: 'Baseline',
+                    display: false,
+                    fill: false,
+                    pointRadius: 0,
+                    backgroundColor: transparent_color,
+                    borderColor: color_light_grey,
+                    borderWidth: 2,
+                    data: meditation_data.baseline
+                },
+                {
+                     label: 'Relaxed',
+                     // fill: 1, // Uncomment this line to fill up to Alpha
+                     fill: 2, // Uncomment this line to fill up to Baseline
+                     pointRadius: 0,
+                     backgroundColor: color_dark_blue,
+                     borderColor: transparent_color,
+                     borderWidth: 0,
+                     data: meditation_data.beta_filled,
+                },
+                ]
+            },
+            options: {
+                responsive: true,
+                title: {
+                    fontColor: '#4da4aa',
+                    display: false,
+                    text: 'Meditation Data'
+                },
+                tooltips: {
+                    mode: 'index',
+                    intersect: false,
+                    filter: function (tooltipItem, data) {
+                        if (tooltipItem.datasetIndex > 2)
+                            return false;
+                        return true;
+                    },
+                    callbacks: {
+                      label: function(tooltipItem, data) {
+                          let number = data.datasets[tooltipItem.datasetIndex].data[tooltipItem.index].y;
+                          return data.datasets[tooltipItem.datasetIndex].label + ": " + Math.round(number*1000)/1000;
+                        }
+                    },
+                },
+                hover: {
+                    mode: 'nearest',
+                    intersect: true
+                },
+                legend: {
+                    display: true,
+                    labels: {
+                        filter: function (legendItem, data) {
+                            if (legendItem.datasetIndex > 1)
+                                return false;
+                            return true;
+                        }
+                    }
+                },
+                scales: {
+                    xAxes: [{
+                        display: true,
+                        scaleLabel: {
+                            display: true,
+                            labelString: 'Time (seconds)'
+                        },
+                        type: "linear",
+                        ticks: {
+                            min: 0,
+                            max: 60
+                        }
+                    }],
+                    yAxes: [{
+                        color: "#fff",
+                        zeroLineColor: "#fff",
+                        display: true,
+                        scaleLabel: {
+                            display: true,
+                            labelString: 'EEG'
+                        }
+                    }]
+                },
+                plugins: {
+                    filler: {
+                        propagate: false
+                    },
+                    'samples-filler-analyser': {
+                        target: 'chart-analyser'
+                    }
+                }
+            }
+        };
+
+        var doughnut_chart_config = {
+            type: 'doughnut',
+            data: {
+                datasets: [{
+                    data: result,
+                    backgroundColor: [
+                        color_cyan,
+                        color_yellow,
+                        "#2F353A"
+                    ],
+                    borderColor: transparent_color,
+                    label: 'Dataset 1'
+                },],
+                labels: [
+                    'Relaxed',
+                    'Alert',
+                ]
+            },
+            options: {
+                responsive: true,
+                layout: {
+                    padding: {
+                        left: 0,
+                        right: 0,
+                        top: 0,
+                        bottom: 0
+                    }
+                },
+                legend: {
+                    position: 'top',
+                    reverse: true,
+                },
+                title: {
+                    fontColor: '#4da4aa',
+                    display: false,
+                    text: 'Meditation Result'
+                },
+                animation: {
+                    animateScale: true,
+                    animateRotate: true
+                },
+                tooltips: {
+                    callbacks: {
+                      label: function(tooltipItem, data) {
+                          if (tooltipItem.index > 1) return "";
+                          return " " + data.datasets[tooltipItem.datasetIndex].data[tooltipItem.index] + " %";
+                        }
+                    }
+
+                }
+            }
+        };
+        window.onload = function() {
+            let ctx = document.getElementById('doughnut_chart').getContext('2d');
+            myDoughnut = new Chart(ctx, doughnut_chart_config);
+
+            ctx = document.getElementById('line_chart').getContext('2d');
+            myLine = new Chart(ctx, line_chart_config);
+        };
+
+        /* Muse Manager */
+        const muse = ["Muse_black", "Muse_white"];
+        const state_name = ["idle", "fitting", "calibration", "tutorial", "meditation", "result", "end"];
+        var socket = io('http://127.0.0.1:9999');
+        socket.on('connect',function() {
+          console.log('Client has connected to the server!');
+        });
+
+        socket.on('toggle_on', function(data) {
+            console.log('Switching to', data);
+            for (var i = 0; i < muse.length; i++) {
+                if (muse[i] == data)
+                    document.getElementById(muse[i] + '_state').classList.add("badge-background");
+                else
+                    document.getElementById(muse[i] + '_state').classList.remove("badge-background");
+            }
+        });
+
+        socket.on('data', function(data) {
+            console.log(data);
+            meditation_data[data[0]].push(data[1]);
+            myLine.update();
+        });
+
+        socket.on('meditation_result', function(data) {
+            console.log('meditation_result', data);
+            for (var i = 0; i < 3; i++)
+                result[i] = data[i];
+            myDoughnut.update();
+        });
+
+        function reset_data() {
+            console.log('Clear all data!');
+            meditation_data.baseline.splice(0, meditation_data.baseline.length);
+            meditation_data.alpha.splice(0, meditation_data.alpha.length);
+            meditation_data.beta.splice(0, meditation_data.beta.length);
+            meditation_data.beta_filled.splice(0, meditation_data.beta_filled.length);
+            result[0] = 0;
+            result[1] = 0;
+            result[2] = 0.1;
+            if (myDoughnut) myDoughnut.update();
+            if (myLine) myLine.update();
+        }
+
+        // black headband
+        var context_black = document.getElementById('canvas-black').getContext('2d');
+        var image_black = new Image();
+        image_black.src = 'images/Muse_black.png';
+        image_black.onload = function() {
+            let width = 600;
+            let height = 414;
+            context_black.drawImage(image_black, 0, 0, width, height);
+        };
+        socket.on('Muse_black_state', function (data) {
+            // console.log("Muse black state:" , data);
+            document.getElementById('Muse_black_state').innerHTML = state_name[data];
+            console.log(state_name[data]);
+            if (state_name[data] == 'meditation') // BCI
+                reset_data();
+          });
+        socket.on('Muse_black_connection', function (data) {
+            // console.log("Muse black:" , data);
+            draw_connection_info(context_black, image_black, data);
+          });
+
+        // white headband
+        var context_white = document.getElementById('canvas-white').getContext('2d');
+        var image_white = new Image();
+        image_white.src = 'images/Muse_white.png';
+        image_white.onload = function() {
+            let width = 600;
+            let height = 414;
+            context_white.drawImage(image_white, 0, 0, width, height);
+        };
+        socket.on('Muse_white_state', function (data) {
+            // console.log("Muse white state:" , data);
+            document.getElementById('Muse_white_state').innerHTML = state_name[data];
+            if (state_name[data] == 'meditation') // BCI
+                reset_data();
+          });
+        socket.on('Muse_white_connection', function (data) {
+            // console.log("Muse white:" , data);
+            draw_connection_info(context_white, image_white, data);
+          });
+
+        // Draw connection indicators on canvas
+        const connection_colors = ['rgba(231, 60, 30, 0.2)', 'rgba(231, 60, 30, 0.5)' , 'rgba(46, 204, 113, 0.5)']
+        const area = [
+                [{x:50, y:142}, {x:75, y:175}, {x:120, y:330}, {x:115, y:330}],
+                [{x:158, y:38}, {x:265, y:30}, {x:260, y:65}, {x:155, y:74}],
+                [{x:622-265, y:30}, {x:622-158, y:38}, {x:622-155, y:74}, {x:622-260, y:65}],
+                [{x:619-75, y:175}, {x:619-50, y:142}, {x:619-115, y:330}, {x:619-120, y:330}],
+            ];
+        function draw_connection_info(ctx, muse_image, connection_info) {
+            ctx.clearRect(0, 0, 600, 414);
+            ctx.drawImage(muse_image, 0, 0, 600, 414);
+            for (var i = 0; i < area.length; i++) {
+                ctx.fillStyle = connection_colors[connection_info[i]];
+                ctx.beginPath();
+                ctx.moveTo(area[i][0].x, area[i][0].y)
+                ctx.lineTo(area[i][1].x, area[i][1].y)
+                ctx.lineTo(area[i][2].x, area[i][2].y)
+                ctx.lineTo(area[i][3].x, area[i][3].y)
+                ctx.closePath();
+                ctx.fill();
+            }
+        }
+    </script>
+</body>
+
+</html>
