@@ -8,7 +8,7 @@
 
 // Debug
 final static boolean debug = false;
-final static boolean debugOSC = true;
+final static boolean debugOSC = false;
 
 void muse_manager_setup() {
     // Take the first muse as the default:

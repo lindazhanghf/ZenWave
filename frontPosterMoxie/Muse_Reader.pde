@@ -12,7 +12,8 @@ final static NetAddress muse_diagram_address = new NetAddress("127.0.0.1", 7980)
 
 // MACROS
 final static boolean MEDITATION_MODE = true; // "true" for mediation, "false" for clam detection mode
-final static int MEDITATION_TIME = 60; // Length of the meditation time in seconds, default 60 seconds
+final static int MEDITATION_TIME = 60;      // Length of the meditation time in seconds, default 60 seconds
+final static int CALIBRATION_LIMIT = 100; // Minimum number of data points required for calibration
 final static int NUM_CHANNEL = 4;
 final static String[] BANDS = {"alpha", "beta", "gamma", "delta", "theta", "EEG"};
 final static color[] COLORS = {#E0FFFF, #FF5733, #F4D03F, #B0A94F, #82E0AA, #000000};
@@ -142,7 +143,7 @@ void draw_Muse_Reader() {
 
         case 2: // CALIBRATION
             calibration_time =  curr_time - state_start_time;
-            if (calibration_data_points >= 70 && curr_clip == 1)
+            if (calibration_data_points >= CALIBRATION_LIMIT && curr_clip == 1)
                 change_state_when_finished();
             break;
 
@@ -222,19 +223,19 @@ void draw_Muse_Reader() {
         randomly_moving = false;
 
     // Testing
-    // text("State:", 800, 15);
-    // text(STATES[Muse.in_use.state], 850, 15);
-    // text(curr_clip, 950, 15);
+    text("State:", 800, 15);
+    text(STATES[Muse.in_use.state], 850, 15);
+    text(curr_clip, 950, 15);
 
-    // if (calm_start_time > 0) text(curr_time - calm_start_time, 900,40);
-    // else text(curr_time - state_start_time, 900,40);
-    // text(beta_upper_limit, 900,25);
+    if (calm_start_time > 0) text(curr_time - calm_start_time, 900,40);
+    else text(curr_time - state_start_time, 900,40);
+    text(beta_upper_limit, 900,25);
 
-    // text(calibration_data_points, 930, 40);
-    // text("#data " + beta_data_points, 900, 55);
+    text(calibration_data_points, 930, 40);
+    text("#data " + beta_data_points, 900, 55);
 
-    // for (int i = 0; i < 4; i++)
-    //     text((good_connection[i]?"good":"bad"), 10, 10 + i * 15);
+    for (int i = 0; i < 4; i++)
+        text((good_connection[i]?"good":"bad"), 10, 10 + i * 15);
 
     // // Draw bar chart
     // if (Muse.in_use.state == BCI)
@@ -525,12 +526,12 @@ void getAbsolute(OscMessage msg, String muse_name) {
     if (has_data && msg.checkAddrPattern(muse_name + "/elements/beta_absolute")) {
         if (Muse.in_use.state == DETECTION)
             detect_calmness();
-        else if (calibration_data_points < 70 && Muse.in_use.state == CALIBRATION && calibration_time > 18 && fitting_index > 2)
+        else if (calibration_data_points < CALIBRATION_LIMIT && Muse.in_use.state == CALIBRATION && calibration_time > 18 && fitting_index > 2)
         {
             beta_sum += absolute[BETA];
             calibration_data_points++;
 
-            if (calibration_time > 25 && calibration_data_points >= 70) {
+            if (calibration_data_points == CALIBRATION_LIMIT) {
                 calibration_done.play();
                 play_next_clip();
             }

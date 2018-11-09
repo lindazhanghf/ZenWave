@@ -237,7 +237,7 @@ class  Neuron {
     float beta_score = (Muse.in_use.state > CALIBRATION) ? score[BETA] : 0;
     // beta_score =  beta_score / 10 * 8 + 0.1;
     if (beta_score < 0) beta_score = 0;
-    if (fitting_index > 0 && fitting_index < 4)
+    if (fitting_index > 0)
       stroke(242, 242 - (24 / 2), 13 + 24, beta_score * 60 + 30);
     else
       stroke(150, beta_score * 60 + 30);
