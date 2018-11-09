@@ -34,9 +34,9 @@ final static int IDLE = 0;           // Headband not on
 final static int FITTING = 1;        // Adjusting the headband until fitted
 final static int CALIBRATION = 2;    // 20 seconds of calibration
 final static int EXPLAINATION = 3;   // Guide user through 3 different interactions
+final static int MEDITATION = 4;     // Meditate for 1 minute
+final static int BCI = 5;            // Final state
 final static int DETECTION = 6;      // Detecting 10 seconds of continuous 'calm'
-final static int BCI = 5;            // Final state after "flipped"
-final static int MEDITATION = 4;     // IF Meditation Mode
 
 // Audio Cues
 final static int[] number_of_clips = {1, 2, 2, 9, 3};
@@ -550,7 +550,11 @@ final static int gyro_threshold_strict = 60; // Used to skip ANY audio cues
 int threshold = gyro_threshold_strict;       // Angular velocity required to trigger a "nod"
 void getGyroscope(OscMessage msg, String muse_name) {
     if (msg.checkAddrPattern(muse_name + "/gyro")) {
-        float y = msg.get(1).floatValue();
+        float y;
+        if (msg.checkTypetag("ddd"))
+            y = (float) msg.get(1).doubleValue();
+        else
+            y = msg.get(1).floatValue();
         switch (gyro_position) {
             case 1: // Head up
                 if (y < 0) {

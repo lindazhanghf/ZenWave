@@ -1,19 +1,16 @@
 const opn = require('opn');
 var fs = require('fs');
-var app = require('express')()
+const express = require('express');
+const app = express();
 var http = require('http').Server(app);
 var io = require('socket.io')(http);
+
+app.use(express.static('public'))
+app.listen(3000);
 
 http.listen(8888, function(){
   console.log('socket.io listening on *:8888');
 });
-
-// Run child process to refresh the charts when new data comes in
-const { exec } = require('child_process');
-exec('./node_modules/reload/bin/reload -p 3000 -d ./public/')
-
-opn('http://localhost:3000/')
-
 var osc = require('node-osc');
 var oscServer = new osc.Server(7980, '127.0.0.1');
 
@@ -23,13 +20,15 @@ const IDLE = 0;           // Headband not on
 const FITTING = 1;        // Adjusting the headband until fitted
 const CALIBRATION = 2;    // 20 seconds of calibration
 const EXPLAINATION = 3;   // Guide user through 3 different interactions
-const MEDITATION = 4;     // IF Meditation Mode
-const BCI = 5;            // Final state after "flipped"
+const MEDITATION = 4;     // Meditate for 1 minute
+const BCI = 5;            // Final state
 
 var muses = [];
 muses.push(Muse("Muse_black", "Muse_black"));
 muses.push(Muse("/muse", "Muse_white"));
 muses[0].in_use = true;
+
+opn('http://localhost:3000/')
 
 function Muse(address, prefix) {
     let m = {};
@@ -165,35 +164,6 @@ function save_data(muse_data, msg, name) {
     console.log("Save " + name + " data - ", msg[1]);
 }
 
-function write_data(muse) {
-    let content = 'meditation_data = {';
-    content += '"baseline" : ' + JSON.stringify(muse.baseline_array) + ',\n';
-    let alpha = muse.data[0];
-    content += '"alpha" : ' + JSON.stringify(alpha.array) + ',\n';
-    let beta = muse.data[1];
-    content += '"beta" : ' + JSON.stringify(beta.array) + ',\n';
-    content += '"beta_filled" : ' + JSON.stringify(beta.array_filled) + ',\n';
-    content += '}\n';
-    let valid_data = (muse.num_alert + muse.num_relaxed) / 1000; // To calculate percentage [Meditation Result]
-    content += 'var result = ' + JSON.stringify([Math.round(muse.num_relaxed/valid_data)/10, Math.round(muse.num_alert/valid_data)/10, 0]) + ';\n';
-    console.log('Meditation result: ', muse.num_alert, muse.num_relaxed);
-    write_file(content);
-}
-
-function write_blank_data() {
-    let content = '';
-    content += "var result = " + JSON.stringify([0, 0, 1]);
-    write_file(content);
-}
-
-function write_connection_info() {
-    let content = "";
-    content += "var connection_muse_black = " + JSON.stringify(muse_black.connection_info) + ";\n";
-    content += "var connection_muse_white = " + JSON.stringify(muse_white.connection_info) + ";\n";
-    // write to a file named connection_info.js to be used by html to display data
-    write_file(content);
-}
-
 function reset_data(muse) {
     muse.baseline = 0;
     muse.baseline_array = [];
@@ -208,15 +178,4 @@ function muse_data() {
     data.array_dashed = [];
     data.array_filled = []; // Periods that the user achieved a state of peace
     return data;
-}
-
-function write_file(content) {
-    // write to a file named data.js to be used by html to display data
-    fs.writeFile('public/data.js', content, (err) => {
-        if (err) throw err;
-        console.log('Write data sucess.');
-        return true;
-    });
-    return false; // fail to write file
-
 }
