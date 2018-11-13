@@ -3,14 +3,14 @@ This project was done for my internship at Moxie as a Future Experiences Fellow.
 
 This demo guides users through a series of actions to control the visuals on the wall through their brainwaves. Then they meditate for one minute using the visuals and audio cues. A visualization of their brainwave during the meditation will be shown on the web app in the end.
 
-## Demo during Moxie All Access
-The project was showcased to 50+ participants during [Moxie All Access 2018](https://acreativepearphotography.pixieset.com/g/moxieallaccess2018/).
 <p float="left">
   <img src="http://www.ziyinzhang.com/project/image/brain-machine/showcase.jpg" width="430" />
   <img src="http://www.ziyinzhang.com/project/image/brain-machine/showcase2.jpg" width="430" /> 
 </p>
 
-## Project Overview 
+The project was showcased during [Moxie All Access 2018](https://acreativepearphotography.pixieset.com/g/moxieallaccess2018/).
+
+## Project overview 
 This project consists of two parts: FrontPosterMoxie and Muse diagram. 
 
 FrontPosterMoxie is based on the Processing script provided by Pedro Arevalo. This part is essential for the experience. It does the following: 
@@ -22,25 +22,28 @@ Muse Diagram is a simple web app created using Node.js. This part is *not* essen
 1. Receive data from FrontPosterMoxie via OSC 
 2. Display information of headbands
 
-### Set Up
+### Set up
 On a Windows 10 machine, install the following software: 
-- Muse Direct, available in Miscrosoft Store 
+- Muse Direct, available in Miscrosoft Store
+
+On the device you want to demo on (it can be the same Windows machine), install the following software: 
 - Node.js latest stable build
-- Processing and its libraries (this part is not necessary if you downloaded the FronPosterMoxie executables)
+- MadMapper 2 (for the Mac Mini to project onto the brain map)
+- Processing and its libraries (this part is not necessary if you downloaded the FrontPosterMoxie executables)
    - Sound 
    - OSCP5 
    - Syphon (used to stream screen to MadMapper)
 
-Download the repository. Open a terminal, navigate to the folder *brainDiagram* and run:
+Download the repository/execuable files. Open a terminal, navigate to the folder *brainDiagram* and run:
 ```
 npm install
 ```
 
-### Preparation
+### How to run the project
 
 Connect the headbands to Muse Direct (see appendix for detailed connection instruction) or [Muse Monitor](https://musemonitor.com/). Start OSC stream.
 
-Run FrontPosterMoxie. You should be able to see the neurons moving slightly if it’s connected. 
+Run FrontPosterMoxie. You should be able to see the neurons moving slightly if it recieves in-coming OSC data. 
 
 Open a terminal, navigate to the folder *brainDiagram* and run:
 ```
@@ -123,13 +126,40 @@ Press ```Enter``` in FrontPosterMoxie to restart the experience.
 
 ```\ Backslash``` go back to the previous state. Only use during Calibration state to restart calibtration.
 
-### Additional Notes  
+### Additional notes  
+
+#### Steps for Bluetooth Connection 
+
+1. Open Muse Direct, make sure Bluetooth of the PC is turned on 
+2. If the “Devices” list is empty, click the blue “Scan” button 
+3. Click on the Bluetooth icon next to the ID of the headband you want to connect. List of all IDs can be found in the appendix. 
+4. Press the power button on the Muse Headband and see the indicator light turned on and started "searching"  
+5. Wait 10-60 seconds for the headband to connect ```*``` 
+6. The headband is connected when: the dots next to the Bluetooth icon disappeared, the switch turned blue, and the battery icon is filled 
+7. Choose the output of the data to the device you want to use, e.g. “Mac mini”. You can always add a new device and enter its IP address. The UDP PORT number should always be 8970. 
+
+ ```*``` If the headband (usually the white one) is still disconnected after 60 seconds, try the following steps: 
+1. Ensure Muse is removed from "Bluetooth & other devices" list in Window’s control panel. 
+2. Reset Muse - hold down power button for 5 seconds until the indicator light turns off then back on. 
+3. Start searching for Muse - Switch on the Bluetooth in Muse Direct. 
+4. Connect - Click "Connect" if a Bluetooth window pops up asking for permission to connect. 
+     - If no such window pops up, click "Add Bluetooth or other device" in the control panel and select the corresponding headband ID to connect. Once connected, switch on the Bluetooth in Muse Direct again.
+
+#### Muse Headband ID 
+
+| ID | Color |
+| ---  |  ---  |
+| Muse-48F1 | white headband | 
+| Muse-A450 (new) | black headband | 
+| Muse-53F8 (old) | black headband (sensors on the headband look slightly rusty) | 
 
 #### Muse Direct setting 
 
 | Field    |  Setting  |
 | ---      | ---       |
+| Nickname | Mac mini  |
 | Type     | OSC UDP   |
+| IP Address | 10.11.103.6 (Mac mini w/ FutureX WiFi) <br/> 127.0.0.1 (run locally) |
 | Port     | 7000      |
 | Prefix   | Muse_black|
 | Output Data (checked)| <lu><li>Gyroscope </li></lu> |
