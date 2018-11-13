@@ -20,16 +20,16 @@ FrontPosterMoxie is based on the Processing script provided by Pedro Arevalo. Th
 
 Muse Diagram is a simple web app created using Node.js. This part is *not* essential for the experience. It does the following: 
 1. Receive data from FrontPosterMoxie via OSC 
-2. Display information of Muse Head
+2. Display information of headbands
 
 ### Set Up
 On a Windows 10 machine, install the following software: 
-- Muse Direct (available in Miscrosoft Store) 
+- Muse Direct, available in Miscrosoft Store 
 - Node.js latest stable build
-- Processing (version 3.0+), and the latest libraries: 
+- Processing and its libraries (this part is not necessary if you downloaded the FronPosterMoxie executables)
    - Sound 
    - OSCP5 
-   - Syphon (used to send screen to MadMapper) 
+   - Syphon (used to stream screen to MadMapper)
 
 Download the repository. Open a terminal, navigate to the folder *brainDiagram* and run:
 ```
@@ -76,7 +76,7 @@ Once all sensors are green, the user can continue to the next state. Press ```En
 
 The headband needs to calibrate for 15~20 seconds. During this state, the users are required to close his/her eyes, sit still, and not moving any facial muscle. Calibration data will only be collected when 3 or more sensors are shown green.  
 
-After 70 data points are collected, the calibration state ends. An average of Beta absolute power collected throughout the state will be calculated as the baseline for the preceding states. 
+After 100 data points are collected, the calibration state ends. An average of Beta absolute power collected throughout the state will be calculated as the baseline for the preceding states. 
 
 #### Tutorial 
 
@@ -127,7 +127,7 @@ Press ```Enter``` in FrontPosterMoxie to restart the experience.
 
 #### Muse Direct setting 
 
-| Setting  |  |
+| Field    |  Setting  |
 | ---      | ---       |
 | Type     | OSC UDP   |
 | Port     | 7000      |
