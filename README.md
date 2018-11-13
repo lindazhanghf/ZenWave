@@ -58,10 +58,10 @@ Put on the Muse Headband.
 #### Fitting
 
 Use the image of the headband on the web app to get the best fit. Here is a video guide to wear the headband properly:
-<p float="left">
-  <img herf=“https://youtu.be/v8xUYqqJAIg” target="_blank" src="https://img.youtube.com/vi/v8xUYqqJAIg/0.jpg" width="300" />
-  <img src="http://www.ziyinzhang.com/project/image/brain-machine/web_app_fitting.png" width="330" /> 
-</p>
+
+
+[<img src="https://img.youtube.com/vi/v8xUYqqJAIg/0.jpg" width="300">](https://youtu.be/v8xUYqqJAIg)
+<img src="http://www.ziyinzhang.com/project/image/brain-machine/web_app_fitting.png" width="330">
 
 &nbsp;&nbsp;&nbsp;&nbsp; [*Adjusting and fitting tips for Muse*](https://youtu.be/v8xUYqqJAIg) &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; *Headband fitting information*
  
