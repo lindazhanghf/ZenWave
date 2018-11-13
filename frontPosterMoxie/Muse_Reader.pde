@@ -223,19 +223,19 @@ void draw_Muse_Reader() {
         randomly_moving = false;
 
     // Testing
-    text("State:", 800, 15);
-    text(STATES[Muse.in_use.state], 850, 15);
-    text(curr_clip, 950, 15);
+    // text("State:", 800, 15);
+    // text(STATES[Muse.in_use.state], 850, 15);
+    // text(curr_clip, 950, 15);
 
-    if (calm_start_time > 0) text(curr_time - calm_start_time, 900,40);
-    else text(curr_time - state_start_time, 900,40);
-    text(beta_upper_limit, 900,25);
+    // if (calm_start_time > 0) text(curr_time - calm_start_time, 900,40);
+    // else text(curr_time - state_start_time, 900,40);
+    // text(beta_upper_limit, 900,25);
 
-    text(calibration_data_points, 930, 40);
-    text("#data " + beta_data_points, 900, 55);
+    // text(calibration_data_points, 930, 40);
+    // text("#data " + beta_data_points, 900, 55);
 
-    for (int i = 0; i < 4; i++)
-        text((good_connection[i]?"good":"bad"), 10, 10 + i * 15);
+    // for (int i = 0; i < 4; i++)
+    //     text((good_connection[i]?"good":"bad"), 10, 10 + i * 15);
 
     // // Draw bar chart
     // if (Muse.in_use.state == BCI)
