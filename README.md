@@ -6,8 +6,8 @@ This demo guides users through a series of actions to control the visuals on the
 ## Demo during Moxie All Access
 The project was showcased to 50+ participants during [Moxie All Access 2018](https://acreativepearphotography.pixieset.com/g/moxieallaccess2018/).
 <p float="left">
-  <img src="http://www.ziyinzhang.com/project/image/brain-machine/showcase.jpg" width="430" />
-  <img src="http://www.ziyinzhang.com/project/image/brain-machine/showcase2.jpg" width="430" /> 
+  <img src="http://lindazhanghf.github.io/project/image/brain-machine/showcase.jpg" width="430" />
+  <img src="http://lindazhanghf.github.io/project/image/brain-machine/showcase2.jpg" width="430" /> 
 </p>
 
 ## Project Overview 
@@ -48,7 +48,7 @@ node brain_diagram.js
 ```
 
 A web page should pop up automatically, just wait for a few seconds for it to render or refresh. If nothing shows up, open a web browser, type http://localhost:3000/ in the address bar. You should be able to see the default view of the web app like this: 
-![Default view of web app](http://www.ziyinzhang.com/project/image/brain-machine/web_app_default.png)
+![Default view of web app](http://lindazhanghf.github.io/project/image/brain-machine/web_app_default.png)
 
 ### Instructions for each state in the experience
 
@@ -61,7 +61,7 @@ Use the image of the headband on the web app to get the best fit. Here is a vide
 
 
 [<img src="https://img.youtube.com/vi/v8xUYqqJAIg/0.jpg" width="300">](https://youtu.be/v8xUYqqJAIg)
-<img src="http://www.ziyinzhang.com/project/image/brain-machine/web_app_fitting.png" width="330">
+<img src="http://lindazhanghf.github.io/project/image/brain-machine/web_app_fitting.png" width="330">
 
 &nbsp;&nbsp;&nbsp;&nbsp; [*Adjusting and fitting tips for Muse*](https://youtu.be/v8xUYqqJAIg) &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; *Headband fitting information*
  
@@ -94,7 +94,7 @@ After each interaction, the tutorial is paused to allow the users to practice th
 The users are instructed to meditate for one minute. Essentially the users can do whatever they want, either opening or closing their eyes. Alpha and Beta Band Power are collected and use for calculation of the “relaxed state”. 
 
 #### Result – Brain Diagram 
-![Result of web app](http://www.ziyinzhang.com/project/image/brain-machine/web_app_result.png)
+![Result of web app](http://lindazhanghf.github.io/project/image/brain-machine/web_app_result.png)
 
 Result of the one minute meditation are shown in Brain Diagram as two charts: 
 
